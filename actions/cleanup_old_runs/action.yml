@@ -1,0 +1,31 @@
+---
+name: "Cleanup Oldest Branches and Runs"
+description: "Housekeeping procedure that removes (N-oldest) generated branches and workflow_runs in the CALLER repository"
+
+inputs:
+  ACCESS_TOKEN:
+    description: ""
+    required: true
+    default: ""
+  GENERATED_BRANCHES_POOL_SIZE:
+    description: ""
+    required: false
+    default: "20"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ inputs.ACCESS_TOKEN }}
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Generate Github-native Workflow
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.ACCESS_TOKEN }}
+        GENERATED_BRANCHES_POOL_SIZE: ${{ inputs.GENERATED_BRANCHES_POOL_SIZE }}
+      run: python ${{ github.action_path }}/scripts/cleanup_generated_branches.py

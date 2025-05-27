@@ -1,0 +1,82 @@
+---
+name: "Execute Atlas Pipeline"
+description: "Generates GitHub-native workflow from Atlas Pipeline and executes it (in a new branch in the CALLER repo)"
+
+inputs:
+  PIPELINE_DATA:
+    description: "Paths to local or web-files with atlas pipelines of configs"
+    required: true
+    default: ""
+  PIPELINE_VARS:
+    description: "Pipeline vars to add to ones from configs. e.g. 'TEST_VAR=123;TEST_VAR2=234;'"
+    required: false
+    default: ""
+  DRY_RUN:
+    description: "If 'true' - workflow will be only generated, but not executed"
+    required: false
+    default: false
+  ACCESS_TOKEN:
+    description: "Github token with write content/actions/workflows access to Caller repo"
+    required: true
+    default: ""
+  EXECUTOR_REF:
+    description: "Branch or tag of executor that should be used (to correctly pass it to generated workflow)"
+    required: false
+    default: "main"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ inputs.ACCESS_TOKEN }}
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Generate Github-native Workflow
+      shell: bash
+      env:
+        GH_PRIVATE_READ_TOKEN: ${{ inputs.ACCESS_TOKEN }}
+        PIPELINE_DATA: ${{ inputs.PIPELINE_DATA }}
+        PIPELINE_VARS: ${{ inputs.PIPELINE_VARS }}
+        DRY_RUN: ${{ inputs.DRY_RUN }}
+        EXECUTOR_REF: ${{ inputs.EXECUTOR_REF }}
+      run: |
+        export CALLER_REPO_DIR=$(pwd)
+        cd ${{ github.action_path }}
+        pip install -r ./scripts/requirements.txt
+        python scripts/github_generator.py
+        cp GENERATED_WORKFLOW.yml $CALLER_REPO_DIR/.github/workflows/GENERATED_WORKFLOW.yml
+        cd $CALLER_REPO_DIR
+
+    - name: Push GENERATED_WORKFLOW.yml
+      shell: bash
+      run: |
+        git checkout -b sub_flow_${{ github.run_number }}
+        git add ./.github/workflows/GENERATED_WORKFLOW.yml
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git commit -a -m "Create new workflow"
+        git push --set-upstream origin sub_flow_${{ github.run_number }}      
+
+    - name: Run GENERATED_WORKFLOW.yml (in sub_flow_${{ github.run_number }})
+      shell: bash
+      if: ${{ inputs.DRY_RUN != 'true' }}
+      env:
+        GH_TOKEN: ${{ inputs.ACCESS_TOKEN }}
+        REPO_FULL_NAME: ${{ github.repository }}
+        TARGET_WORKFLOW_FILE: GENERATED_WORKFLOW.yml
+        TARGET_BRANCH: sub_flow_${{ github.run_number }}
+        GENERATED_WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/blob/sub_flow_${{ github.run_number }}/.github/workflows/GENERATED_WORKFLOW.yml
+      run: |
+        cd ${{ github.action_path }}
+        python scripts/run_workflow_and_report.py
+
+    - name: Upload Result
+      if: ${{ inputs.DRY_RUN != 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: "result"
+        path: "result.yaml"

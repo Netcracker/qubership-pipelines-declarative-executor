@@ -1,0 +1,62 @@
+name: _Save_Pipeline_Output
+
+on:
+  workflow_call:
+    inputs:
+      input:
+        required: false
+        type: string
+
+env:
+  QUBERSHIP_MODULES_OPS_URL: https://github.com/Netcracker/qubership-pipelines-modules-ops/releases/download/v0.0.4/qubership_pipelines_modules_ops-v0.0.4.pyz
+
+jobs:
+  save-pipeline-output:
+    runs-on: ubuntu-latest
+    env:
+      input: ${{ inputs.input }}
+      output: |
+        pipeline_output: yes, please
+        files:
+          files: '*'
+      CI_JOB_NAME: save-pipeline-output
+      CI_JOB_STAGE: save-pipeline-output
+    steps:
+      - name: Download files
+        id: download-files
+        uses: actions/download-artifact@v4
+        with:
+          path: rt/stored_data
+          merge-multiple: true
+
+      - name: Prepare Data
+        id: prepare-data
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p ./quber
+          wget -O ./quber/qubership_modules_ops.pyz $QUBERSHIP_MODULES_OPS_URL
+          unzip -q ./quber/qubership_modules_ops.pyz -d ./quber/qubership_modules_ops
+          python ./quber/qubership_modules_ops prepare-data --root rt --stage $CI_JOB_STAGE
+
+      - name: Process Output Data
+        id: process-output-data
+        run: |
+          mv -f ./rt/job_data/input_files/* ./rt/job_data/output_files/
+          mv -f ./rt/job_data/input_params.yaml ./rt/job_data/output_params.yaml
+          mv -f ./rt/job_data/input_params_secure.yaml ./rt/job_data/output_params_secure.yaml
+
+      - name: Store Data
+        id: store-data
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_JOB_NAME: save-pipeline-output / save-pipeline-output
+        run: |
+          python ./quber/qubership_modules_ops store-data --root rt --stage $CI_JOB_STAGE --job $CI_JOB_NAME
+
+      - name: Upload files
+        id: upload-files
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline_output
+          path: rt/pipeline/output
