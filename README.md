@@ -4,7 +4,7 @@ This repo contains GitHub-composite-actions and reusable workflows created for g
 
 Atlas Pipelines are intended to be composed of jobs following a certain contract, that are implemented as executor-agnostic python modules, packed into docker containers.
 
-Example modules for this repo are going to be developed and built [in a separate repo with development guide](https://github.com/Netcracker/qubership-cli-command-samples).
+Example modules for this repo are developed and built [in a separate repo with development guide](https://github.com/Netcracker/qubership-pipelines-cli-command-samples).
 
 ### Installation:
 

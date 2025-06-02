@@ -1,0 +1,37 @@
+apiVersion: v2
+kind: AtlasPipeline
+
+pipeline:
+  id: pipeline-two-level-sample
+  name: Pipeline that launches another Pipeline
+  vars:
+    QUBER_CLI_MODULE_IMAGE: ghcr.io/netcracker/qubership-pipelines-cli-command-samples:latest
+    MODULE_TYPE: PYTHON_DOCKER_IMAGE
+    GH_TOKEN_FOR_CHILD: ${{ secrets.GH_TOKEN_FOR_CHILD }}
+
+  stages:
+    - name: Launch and wait for another Atlas Pipeline
+      job: template-module-run-gh-pipeline
+      input:
+        params:
+          params:
+            pipeline_owner: "YOUR_REPO_OWNER"
+            pipeline_repo_name: "YOUR_REPO_NAME"
+            pipeline_workflow_file_name: "EXECUTE_ATLAS_PIPELINE.yml"
+            pipeline_branch: "main"
+            pipeline_params:
+              PIPELINE_DATA: "pipelines/pipeline-basic-sample.yaml"
+              DRY_RUN: false
+              RUN_NAME: "CHILD_RUN_FOR_ANOTHER_PIPELINE"
+          systems:
+            github:
+              password: ${GH_TOKEN_FOR_CHILD}
+      output:
+        params:
+          params: "*"
+
+  jobs:
+    template-module-run-gh-pipeline:
+      path: ${QUBER_CLI_MODULE_IMAGE}
+      type: ${MODULE_TYPE}
+      command: github-run-pipeline

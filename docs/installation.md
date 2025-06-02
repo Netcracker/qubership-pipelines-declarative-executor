@@ -47,7 +47,7 @@ To test whether your configuration is correct, you might want to use one of the 
 
 To do so, navigate to `Actions` tab in your repository, select `Execute Atlas Pipeline` action, and press `Run Workflow` button.
 
-Provide `PIPELINE_DATA` as `pipelines/pipeline-basic-sample..yaml` to use local pipeline file from your repo, and press the green `Run Workflow` button below the parameters.
+Provide `PIPELINE_DATA` as `pipelines/pipeline-basic-sample.yaml` to use local pipeline file from your repo, and press the green `Run Workflow` button below the parameters.
 
 ### 5. Configuring 'Cleanup' workflow (optionally)
 

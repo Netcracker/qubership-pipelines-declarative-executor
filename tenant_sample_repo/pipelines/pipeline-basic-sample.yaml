@@ -1,0 +1,91 @@
+apiVersion: v2
+kind: AtlasPipeline
+
+pipeline:
+  id: pipeline-basic-sample
+  name: Atlas Sample Pipeline
+  vars:
+    QUBER_CLI_MODULE_IMAGE: ghcr.io/netcracker/qubership-pipelines-cli-command-samples:latest
+    MODULE_TYPE: PYTHON_DOCKER_IMAGE
+    THIS_VAR_IS_A_SECRET: ${{ secrets.REPO_SECRET_NUMBER }}
+    TEST_VAR1: 9
+    TEST_VAR2: ${TEST_VAR1}000
+    TEST_VAR3: "abc, cde, def, ghj"
+  report:
+    report_var: report_var_value
+
+  stages:
+    - name: Module That Adds
+      job: template-module-calculate
+      input:
+        params:
+          params:
+            param_1: ${TEST_VAR1}
+            param_2: 10
+            operation: add
+            result_name: CALCULATED_PASS_RATE
+      output:
+        params:
+          params: "*"
+
+    - name: Module That Will Be Skipped
+      job: template-module-calculate
+      when:
+        condition: 'TEST_VAR1 != "9"'
+      input:
+        params:
+          params:
+            param_1: ${TEST_VAR1}
+            param_2: 1
+            operation: add
+            result_name: CALCULATED_PASS_RATE2
+      output:
+        params:
+          params: "*"
+
+    - name: Module That Downloads file
+      job: template-module-calculate
+      command: download-file
+      when:
+        condition: 'TEST_VAR1 == "9" and "cde" in TEST_VAR3'
+      input:
+        params:
+          params:
+            url: https://raw.githubusercontent.com/Netcracker/qubership-pipelines-common-python-library/refs/heads/main/README.md
+            filename: README.md
+      output:
+        params:
+          params: '*'
+        files:
+          FILE_KEY3: README.md
+
+    - name: Module That Reports
+      job: template-module-calculate
+      type: REPORT
+      command: generate-html-report
+      output:
+        params:
+          params: "*"
+        files:
+          REPORT: report.html
+
+  jobs:
+    template-module-calculate:
+      path: ${QUBER_CLI_MODULE_IMAGE}
+      type: ${MODULE_TYPE}
+      command: calc
+
+  configuration: # pipeline configuration
+    output: # output params that should be retrieved form the pipeline parameters context
+      params:
+        params:
+          PASS_RATE: ${CALCULATED_PASS_RATE}
+          PASS_RATE2: ${CALCULATED_PASS_RATE}
+      params_secure:
+        params:
+          SOME_SECRET_TOKEN: ${THIS_VAR_IS_A_SECRET}
+          SOME_SECRET_TOKEN2: ${THIS_VAR_IS_A_SECRET}
+          SOME_SECRET_TOKEN3: ${THIS_VAR_IS_A_SECRET}
+      files:
+        FILE_KEY3: result.md
+        REPORT: report.html

@@ -12,7 +12,6 @@ TBD
 
 ### "PYTHON_DOCKER_IMAGE" jobs
 
-Sample jobs are going to be implemented in [qubership-cli-command-samples](https://github.com/Netcracker/qubership-cli-command-samples) repo.
+Sample jobs are implemented in [qubership-pipelines-cli-command-samples](https://github.com/Netcracker/qubership-pipelines-cli-command-samples).
 
 Your created jobs should follow the same contract - take input parameters and files from context, implement ExecutionCommand interface, and store outputs according to context config.
-
