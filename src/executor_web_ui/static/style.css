@@ -1,0 +1,295 @@
+/* General styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  line-height: 1.6;
+}
+
+h1 {
+  color: #333;
+}
+
+.loading {
+  color: #666;
+  font-style: italic;
+}
+
+/* Execution State - Two Column Layout */
+.execution-info {
+  background: #f8f8f8;
+  padding: 15px;
+  border-radius: 5px;
+  margin: 15px auto;
+  max-width: 800px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 20px;
+  width: fit-content;
+}
+
+.info-row {
+  display: contents;
+}
+
+.info-label {
+  font-weight: bold;
+  text-align: right;
+  padding-right: 10px;
+}
+
+.info-value {
+  text-align: left;
+}
+
+.status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.9em;
+}
+
+.inputs-list {
+  margin: 5px 0 0 0;
+  padding-left: 15px;
+  font-size: 0.9em;
+}
+
+/* Pipeline Visualization Container */
+.pipeline-visualization {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 30px 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pipeline-header {
+  font-size: 1.5em;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Stage Block Styles */
+.stage-block {
+  width: 200px;
+  height: 80px;
+  padding: 8px;
+  border-radius: 6px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.2s;
+  text-align: center;
+}
+
+.stage-block:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+.stage-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage-time {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 3px;
+}
+
+.stage-duration {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  font-style: italic;
+}
+
+/* Layout and Positioning */
+.pipeline-container {
+  position: relative;
+  padding: 30px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.stage-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+.stage-row {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  position: relative;
+  justify-content: center;
+}
+
+/* Status Colors */
+.status-NOT_STARTED,
+.stage-NOT_STARTED {
+  background-color: #dddddd;
+  color: black;
+}
+
+.status-SKIPPED,
+.stage-SKIPPED {
+  background-color: #909090;
+  color: white;
+}
+
+.status-IN_PROGRESS,
+.stage-IN_PROGRESS {
+  background-color: #2196f3;
+  color: white;
+}
+
+.status-SUCCESS,
+.stage-SUCCESS {
+  background-color: #4caf50;
+  color: white;
+}
+
+.status-FAILED,
+.stage-FAILED {
+  background-color: #f44336;
+  color: white;
+}
+
+.status-CANCELLED,
+.stage-CANCELLED {
+  background-color: #ff9800;
+  color: white;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px auto;
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.controls .btn {
+  flex-shrink: 0;
+}
+
+.btn {
+  padding: 8px 15px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.btn:hover {
+  background: #45a049;
+}
+
+.btn.active {
+  background: #f44336;
+}
+
+.btn.active:hover {
+  background: #d32f2f;
+}
+
+/* Collapsible Section */
+.section-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 15px;
+  background: #f0f0f0;
+  border-radius: 5px;
+  margin: 20px 0 0 0;
+  user-select: none;
+}
+
+.section-header:hover {
+  background: #e5e5e5;
+}
+
+.toggle-icon {
+  transition: transform 0.2s;
+}
+
+.collapsible-content {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.collapsed .collapsible-content {
+  max-height: 0 !important;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  opacity: 0;
+}
+
+.collapsed .toggle-icon {
+  transform: rotate(-90deg);
+}
+
+.nested-pipeline {
+  margin-left: 15px;
+  padding: 10px;
+  border-left: 2px solid #555;
+}
+
+.nested-stage-wrapper {
+  position: relative;
+}
+
+.pipeline-container {
+  padding: 20px;
+}
+
+.stage-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stage-row {
+  display: flex;
+  flex-direction: column;
+  margin: 10px;
+}
+
+.parallel-group {
+  display: flex;
+  padding: 10px;
+  margin: 10px;
+  border: 1px dashed #222;
+  border-radius: 5px;
+}
+
+.stage-block {
+  padding: 10px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  min-width: 200px;
+}

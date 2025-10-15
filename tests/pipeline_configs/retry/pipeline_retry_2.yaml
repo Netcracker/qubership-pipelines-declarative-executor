@@ -1,0 +1,89 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: retry-test-pipeline-nested
+  name: Pipeline Lv.2
+  vars:
+    STAGE_TYPE_SH: SHELL_COMMAND
+    STAGE_TYPE_PY: PYTHON_MODULE
+    STAGE_TYPE_NESTED: NESTED_PIPELINE
+    QUBER_CLI_PATH: "quber_cli.pyz"
+    README_FORMAT: "md"
+    CALC_OPERATION: "INVALID_OPERATION"
+    WAIT_CMD: "sleep 1"
+
+  stages:
+    - name: Parallel block
+      parallel:
+        - name: Leftmost Calc That Fails
+          job: template-py-stage
+          command: "calc"
+          input:
+            params:
+              params:
+                param_1: 9
+                param_2: 10
+                operation: ${CALC_OPERATION}
+                result_name: CALC_RESULT
+          output:
+            params:
+              params: "*"
+
+        - name: Spam
+          job: template-py-stage
+          command: "spam"
+          input:
+            params:
+              params:
+                filename: README.${README_FORMAT}
+          output:
+            params:
+              RESULT_SPAM_PARALLEL: "params.some_insecure_param_3"
+
+        - name: Waiter inside parallel
+          job: template-echo-stage
+          command: ${WAIT_CMD}
+
+        - name: Pipeline Lv.3
+          type: ${STAGE_TYPE_NESTED}
+          input:
+            pipeline_data: |
+              ${PIPELINE_DATA_DIR}/pipeline_retry_3.yaml
+            pipeline_vars: |
+              OVER_PARAM_1 = qqqq
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              WAIT_CMD = ${WAIT_CMD}
+          output:
+            params:
+              params: "*"
+            files:
+              EVERYTHING_FROM_NESTED: "*"
+
+    - name: Last Spam
+      job: template-py-stage
+      command: "spam"
+      output:
+        params:
+          RESULT_LAST_SPAM: "params.some_insecure_param_3"
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}
+      path: ${QUBER_CLI_PATH}
+    template-echo-stage:
+      type: ${STAGE_TYPE_SH}
+
+  configuration:
+    output:
+      params:
+        params:
+          RESULT_SPAM_PARALLEL: ${RESULT_SPAM_PARALLEL}
+          RESULT_LAST_SPAM: ${RESULT_LAST_SPAM}
+          DL_TIME: ${DL_TIME}
+          CALC_RESULT: ${CALC_RESULT}
+          CALC_1: ${CALC_1}
+          CALC_2: ${CALC_2}
+          CALC_3: ${CALC_3}
+      files:
+        EVERYTHING_FROM_DOWNLOAD_STAGE: ""

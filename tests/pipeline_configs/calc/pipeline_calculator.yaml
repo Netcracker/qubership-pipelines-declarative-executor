@@ -1,0 +1,39 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-calculator
+  name: Test Pipeline Calculator
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    CALC_ARG1: 1
+    CALC_ARG2: 2
+    CALC_OPERATION: add
+
+  stages:
+    - name: CLI "Calc" That Fails
+      job: template-py-stage
+      command: "calc"
+      input:
+        params:
+          params:
+            param_1: ${CALC_ARG1}
+            param_2: ${CALC_ARG2}
+            operation: ${CALC_OPERATION}
+            result_name: CALC_RESULT
+      output:
+        params:
+          params: "*"
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}
+
+  configuration:
+    output:
+      params:
+        params:
+          CALC_RESULT: ${CALC_RESULT}
+      params_secure:
+        params:
+          CALC_RESULT_SECURE: ${CALC_RESULT}

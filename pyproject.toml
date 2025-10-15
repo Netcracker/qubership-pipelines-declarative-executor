@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "qubership-pipelines-declarative-executor"
+version = "2.0.0"
+description = "Qubership Pipelines Declarative Executor"
+authors = ["Qubership"]
+readme = "README.md"
+license = "Apache-2.0"
+packages = [{from = "src", include = "pipelines_declarative_executor"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+PyYAML = "^6.0"
+click = "^8.1"
+requests = "^2.32.3"
+aiohttp = "^3.12.15"
+aiofiles = "^24.1.0"
+miniopy-async = "^1.23.4"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^6.0.0"
+
+[tool.poetry.scripts]
+pipelines_declarative_executor = "pipelines_declarative_executor.__main__:cli"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

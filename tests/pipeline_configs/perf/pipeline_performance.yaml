@@ -1,0 +1,62 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-10-stages
+  name: 10-stages overhead profile
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    TEST_TOKEN: qwerty123
+
+  stages:
+    - name: Spam Cmd 1
+      job: template-py-stage
+
+    - name: Spam Cmd 2
+      job: template-py-stage
+
+    - name: Spam Cmd 3
+      job: template-py-stage
+
+    - name: Spam Cmd 4
+      job: template-py-stage
+
+    - name: Spam Cmd 5
+      job: template-py-stage
+
+    - name: Spam Cmd 6
+      job: template-py-stage
+
+    - name: Spam Cmd 7
+      job: template-py-stage
+
+    - name: Spam Cmd 8
+      job: template-py-stage
+
+    - name: Spam Cmd 9
+      job: template-py-stage
+
+    - name: Spam Cmd 10
+      job: template-py-stage
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            param_1: ${CALC_ARG1}
+            param_2: ${RESULT_SPAM}
+        params_secure:
+          systems:
+            qubership:
+              token: ${TEST_TOKEN}
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_3"
+
+  configuration:
+    output:
+      params:
+        RESULT_SPAM: ${RESULT_SPAM}

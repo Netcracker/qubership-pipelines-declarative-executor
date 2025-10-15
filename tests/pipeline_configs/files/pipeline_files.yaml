@@ -1,0 +1,52 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-files
+  name: Test Pipeline With File Operations
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    TARGET_FILE: ${README_NAME}.${README_FORMAT}
+    README_NAME: README
+    README_FORMAT: md
+
+  stages:
+    - name: Download File
+      job: template-py-stage
+      command: "download-file"
+      input:
+        params:
+          params:
+            url: https://raw.githubusercontent.com/Netcracker/qubership-pipelines-common-python-library/refs/heads/main/${TARGET_FILE}
+            filename: ${TARGET_FILE}
+      output:
+        params:
+          DL_TIME: "params.download_time"
+        files:
+          "FILE_FROM_STAGE_0": ${TARGET_FILE}
+
+    - name: Analyze File
+      job: template-py-stage
+      command: "analyze-file"
+      input:
+        files:
+          "FILE_FROM_STAGE_0": ""
+        params:
+          params:
+            filename: ${TARGET_FILE}
+      output:
+        params:
+          FILE_SIZE: "params.filesize"
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}
+
+  configuration:
+    output:
+      params:
+        params:
+          DL_TIME: ${DL_TIME}
+          FILE_SIZE: ${FILE_SIZE}
+      files:
+        FILE_FROM_STAGE_0: ""
