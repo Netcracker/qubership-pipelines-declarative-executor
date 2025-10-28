@@ -1,3 +1,14 @@
 .idea
 .vs
 .cache
+.venv
+.execution
+dist
+pack
+venv
+x_local_debug
+x_local_main_folder
+*.log
+__pycache__/
+poetry.lock
+report_data.json

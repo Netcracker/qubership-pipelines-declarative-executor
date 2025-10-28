@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Executor Web UI</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <h2 class="section-header">
+      Execution State
+      <i class="fas fa-chevron-down toggle-icon"></i>
+    </h2>
+    <div id="execution-data" class="collapsible-content loading"></div>
+    <div class="controls">
+      <button id="directory-btn" class="btn">
+        <i class="fas fa-folder-open"></i> Select UI View File
+      </button>
+      <button id="refresh-btn" class="btn">
+        <i class="fas fa-sync-alt"></i> Show From Server: Off
+      </button>
+    </div>
+
+    <div id="pipeline-visualization" class="pipeline-visualization loading">
+      Loading pipeline visualization...
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

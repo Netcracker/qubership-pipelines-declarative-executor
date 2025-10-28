@@ -1,0 +1,97 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-3-nested-in-parallel
+  name: Pipeline Lv.3 (With 3-nested in parallel)
+  vars:
+    STAGE_TYPE_SH: SHELL_COMMAND
+    STAGE_TYPE_PY: PYTHON_MODULE
+    STAGE_TYPE_NESTED: NESTED_PIPELINE
+    README_FORMAT: "md"
+    CALC_OPERATION: "INVALID_OPERATION"
+    WAIT_CMD: "sleep 1"
+
+  stages:
+    - name: Parallel block
+      parallel:
+        - name: Pipeline Lv.4 1
+          type: ${STAGE_TYPE_NESTED}
+          input:
+            pipeline_data: |
+              ${PIPELINE_DATA_DIR}/pipeline_retry_4.yaml
+            pipeline_vars: |
+              CALC_OPERATION = ${CALC_OPERATION}
+              CALC_ARG1 = 2
+              CALC_ARG2 = 2
+              WAIT_CMD = ${WAIT_CMD}
+          output:
+            params:
+              CALC_1: "params.CALC_RESULT"
+            files:
+              EVERYTHING_FROM_NESTED: "*"
+
+        - name: Pipeline Lv.4 2
+          type: ${STAGE_TYPE_NESTED}
+          input:
+            pipeline_data: |
+              ${PIPELINE_DATA_DIR}/pipeline_retry_4.yaml
+            pipeline_vars: |
+              CALC_OPERATION = add
+              CALC_ARG1 = 4
+              CALC_ARG2 = 4
+              WAIT_CMD = ${WAIT_CMD}
+          output:
+            params:
+              CALC_2: "params.CALC_RESULT"
+            files:
+              EVERYTHING_FROM_NESTED: "*"
+
+        - name: Pipeline Lv.4 3
+          type: ${STAGE_TYPE_NESTED}
+          input:
+            pipeline_data: |
+              ${PIPELINE_DATA_DIR}/pipeline_retry_4.yaml
+            pipeline_vars: |
+              CALC_OPERATION = ${CALC_OPERATION}
+              CALC_ARG1 = 8
+              CALC_ARG2 = 8
+              WAIT_CMD = ${WAIT_CMD}
+          output:
+            params:
+              CALC_3: "params.CALC_RESULT"
+            files:
+              EVERYTHING_FROM_NESTED: "*"
+
+    - name: Download File
+      job: template-py-stage
+      command: "download-file"
+      input:
+        params:
+          params:
+            url: https://raw.githubusercontent.com/Netcracker/qubership-pipelines-common-python-library/refs/heads/main/README.md
+            filename: README.${README_FORMAT}
+      output:
+        params:
+          DL_TIME: "params.download_time"
+        files:
+          "EVERYTHING_FROM_DOWNLOAD_STAGE": "*"
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}
+    template-echo-stage:
+      type: ${STAGE_TYPE_SH}
+
+  configuration:
+    output:
+      params:
+        params:
+          RESULT_SPAM_PARALLEL: ${RESULT_SPAM_PARALLEL}
+          RESULT_LAST_SPAM: ${RESULT_LAST_SPAM}
+          DL_TIME: ${DL_TIME}
+          CALC_1: ${CALC_1}
+          CALC_2: ${CALC_2}
+          CALC_3: ${CALC_3}
+      files:
+        EVERYTHING_FROM_DOWNLOAD_STAGE: ""

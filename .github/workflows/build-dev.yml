@@ -1,0 +1,31 @@
+name: Build Dev Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      custom_dev_tag:
+        description: "Specific version to release:"
+        default: dev_feature_name
+        type: string
+        required: true
+
+jobs:
+  build-docker-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build and Publish Docker image
+      uses: netcracker/qubership-workflow-hub/actions/docker-action@b575bad3a0959c4e883bc34f9d055ff07fde2dbd # v2.0.1
+      with:
+        ref: ${{ github.ref_name }}
+        custom-image-name: qubership-pipelines-declarative-executor
+        platforms: linux/amd64
+        tags: ${{ inputs.custom_dev_tag }}
+        dry-run: false
+        download-artifact: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

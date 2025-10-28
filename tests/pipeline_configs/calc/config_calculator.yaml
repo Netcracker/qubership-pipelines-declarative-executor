@@ -1,0 +1,8 @@
+kind: AtlasConfig
+apiVersion: v1
+
+global:
+  vars:
+    calculator:
+      CALC_ARG1: 9
+      CALC_ARG2: 10

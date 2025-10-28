@@ -1,0 +1,104 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: retry-test-pipeline
+  name: Pipeline Lv.1 We Will Retry (Top)
+  vars:
+    STAGE_TYPE_SH: SHELL_COMMAND
+    STAGE_TYPE_PY: PYTHON_MODULE
+    STAGE_TYPE_NESTED: NESTED_PIPELINE
+    README_FORMAT: "md"
+    RUN_ADDITIONAL_STAGE: "False"
+    CALC_OPERATION: "INVALID_FROM_TOP"
+    PIPELINE_DATA_DIR: "pipeline_configs/retry"
+    WAIT_CMD: "sleep 1"
+
+  stages:
+    - name: Waiter-stage
+      job: template-echo-stage
+      when:
+        condition: '${RUN_ADDITIONAL_STAGE}'
+      command: ${WAIT_CMD}
+
+    - name: Parallel block
+      parallel:
+        - name: CLI "Spam" 1
+          job: template-py-stage
+          command: "spam"
+          input:
+            params:
+              params:
+                filename: README.${README_FORMAT}
+                some_calced_param: ${PARAM1}_${PARAM2}
+            params_secure:
+              system:
+                git:
+                  password: qwerty123
+          output:
+            params:
+              RESULT_1: "params.some_insecure_param_3"
+              RESULT_2: "params.secure_param_3"
+              RESULT_3: "params.nested_system.its_key"
+
+        - name: Waiter-stage
+          job: template-echo-stage
+          command: ${WAIT_CMD}
+
+    - name: Pipeline Lv.2
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        pipeline_data: |
+          ${PIPELINE_DATA_DIR}/pipeline_retry_2.yaml
+        pipeline_vars: |
+          OVER_PARAM_1 = 123
+          OVER_PARAM_2 = 4124
+          CALC_OPERATION = ${CALC_OPERATION}
+          PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+          WAIT_CMD = ${WAIT_CMD}
+        is_dry_run: false
+      output:
+        params:
+          params: "*"
+        files:
+          EVERYTHING_FROM_NESTED: "*"
+
+    - name: CLI "Spam" 2
+      job: template-py-stage
+      command: "spam"
+      input:
+        params:
+          params:
+            filename: README.${README_FORMAT}
+      output:
+        params:
+          RESULT_4: "params.some_insecure_param_3"
+          RESULT_5: "params.secure_param_3"
+          RESULT_6: "params.nested_system.its_key"
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}
+    template-echo-stage:
+      type: ${STAGE_TYPE_SH}
+
+  configuration:
+    output:
+      params:
+        params:
+          RESULT_1: ${RESULT_1}
+          RESULT_2: ${RESULT_2}
+          RESULT_3: ${RESULT_3}
+          RESULT_4: ${RESULT_4}
+          CALC_RESULT: ${CALC_RESULT}
+          DL_TIME: ${DL_TIME}
+          RESULT_LAST_SPAM: ${RESULT_LAST_SPAM}
+          CALC_1: ${CALC_1}
+          CALC_2: ${CALC_2}
+          CALC_3: ${CALC_3}
+      params_secure:
+        params:
+          SOME_VAR_FROM_GLOBAL_CONFIG_FROM_GH_REPO_VARS2: ${SOME_VAR_FROM_GLOBAL_CONFIG_FROM_GH_REPO_VARS2}
+          DL_TIME: ${DL_TIME}
+      files:
+        EVERYTHING_FROM_NESTED: nested_results

@@ -1,0 +1,53 @@
+name: Execute Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      pipeline_data:
+        default: "https://raw.githubusercontent.com/Netcracker/qubership-pipelines-declarative-executor/refs/heads/main/tests/pipeline_configs/files/pipeline_files.yaml;"
+        type: string
+        required: true
+      pipeline_vars:
+        default: "sample_param=sample_value"
+        type: string
+        required: false
+      log_level:
+        required: true
+        type: choice
+        options:
+          - DEBUG
+          - INFO
+          - WARNING
+          - ERROR
+        default: INFO
+      is_dry_run:
+        default: false
+        required: true
+        type: boolean
+      retry_run_id:
+        type: string
+        required: false
+        description: "ID of Workflow Run that will be retried"
+      retry_vars:
+        default: "sample_retry_param=sample_retry_value"
+        type: string
+        required: false
+
+permissions:
+  actions: read
+  contents: read
+  packages: read
+
+jobs:
+  execute-pipeline:
+    uses: Netcracker/qubership-pipelines-declarative-executor/.github/workflows/reusable-pipeline.yml@main
+    with:
+      pipeline_data: ${{ inputs.pipeline_data }}
+      pipeline_vars: ${{ inputs.pipeline_vars }}
+      log_level: ${{ inputs.log_level }}
+      is_dry_run: ${{ inputs.is_dry_run }}
+      retry_run_id: ${{ inputs.retry_run_id }}
+      retry_vars: ${{ inputs.retry_vars }}
+    secrets:
+      sops_age_recipients: ${{ secrets.SOPS_AGE_RECIPIENTS }}
+      sops_age_key: ${{ secrets.SOPS_AGE_KEY }}

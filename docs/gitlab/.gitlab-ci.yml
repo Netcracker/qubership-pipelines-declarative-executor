@@ -1,0 +1,98 @@
+# Add following variables to "CI/CD -> Variables" settings of repository:
+# GITLAB_TOKEN (to fetch artifacts from previous job in retry-case, and to use in AUTH_RULES)
+# SOPS_AGE_KEY
+# SOPS_AGE_RECIPIENTS
+
+spec:
+  inputs:
+    PIPELINE_DATA:
+      type: string
+      default: "https://raw.githubusercontent.com/Netcracker/qubership-pipelines-declarative-executor/refs/heads/main/tests/pipeline_configs/files/pipeline_files.yaml;"
+    PIPELINE_VARS:
+      type: string
+      default: "test_key=test_value;"
+    LOG_LEVEL:
+      type: string
+      options: ['INFO', 'DEBUG', 'WARNING', 'ERROR']
+      default: "DEBUG"
+    IS_DRY_RUN:
+      type: boolean
+      default: false
+    RETRY_JOB_ID:
+      description: "The ID of a failed job to retry. Leave empty for a fresh execution."
+      type: string
+      default: ""
+    RETRY_VARS:
+      description: "Additional variables for retry execution"
+      type: string
+      default: ""
+
+---
+default:
+  image: ghcr.io/netcracker/qubership-pipelines-declarative-executor:latest # or v2.0.0
+
+variables:
+  DEFAULT_PIPELINE_DIR: "PIPELINE_DIR"
+  DEFAULT_PIPELINE_DIR_ZIP: "PIPELINE_DIR.zip"
+
+stages:
+  - execute_pipeline
+
+.base_stage:
+  only:
+    - api
+    - web
+    - triggers
+
+run:
+  stage: execute_pipeline
+  extends: .base_stage
+  variables:
+    PIPELINES_DECLARATIVE_EXECUTOR_EXECUTION_URL: "${CI_PROJECT_URL}/-/pipelines/${CI_PIPELINE_ID}"
+    PIPELINES_DECLARATIVE_EXECUTOR_EXECUTION_USER: ${GITLAB_USER_NAME}
+    PIPELINES_DECLARATIVE_EXECUTOR_EXECUTION_EMAIL: ${GITLAB_USER_EMAIL}
+    PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_PROFILER_STATS: True
+    PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_MODULE_STDOUT_LOG: True
+    PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES: '[{"host":"gitlab.com","type":"token","headers":{"PRIVATE-TOKEN":"{token}"},"token_env_var":"GITLAB_TOKEN","is_gitlab_url":true}]'
+  before_script:
+    - |
+      if [ -n "$[[ inputs.RETRY_JOB_ID ]]" ]; then
+        echo "📥 Downloading artifacts from pipeline $[[ inputs.RETRY_JOB_ID ]]..."
+        curl --fail-with-body --location --output previous_artifact.zip --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/jobs/$[[ inputs.RETRY_JOB_ID ]]/artifacts/${DEFAULT_PIPELINE_DIR_ZIP}"
+        echo "📦 Extracting downloaded artifacts..."
+        python -m pipelines_declarative_executor unarchive --archive_path="./previous_artifact.zip" --target_path="."
+        echo "✅ Previous execution context restored"
+      fi
+  script:
+    - |
+      if [ -n "$[[ inputs.RETRY_JOB_ID ]]" ]; then
+        echo "🔄 Executing pipeline retry..."
+        python -m pipelines_declarative_executor retry \
+          --pipeline_dir="./${DEFAULT_PIPELINE_DIR}" \
+          --retry_vars="$[[ inputs.RETRY_VARS ]]" \
+          --log_level="$[[ inputs.LOG_LEVEL ]]"
+      else
+        echo "🚀 Executing fresh pipeline run..."
+        python -m pipelines_declarative_executor run \
+          --pipeline_data="$[[ inputs.PIPELINE_DATA ]]" \
+          --pipeline_vars="$[[ inputs.PIPELINE_VARS ]]" \
+          --pipeline_dir="./${DEFAULT_PIPELINE_DIR}" \
+          --is_dry_run="$[[ inputs.IS_DRY_RUN ]]" \
+          --log_level="$[[ inputs.LOG_LEVEL ]]"
+      fi
+  after_script:
+    - |
+      echo "📦 Archiving execution results..."
+      python -m pipelines_declarative_executor archive --pipeline_dir="./${DEFAULT_PIPELINE_DIR}" --target_path="${DEFAULT_PIPELINE_DIR_ZIP}"
+    - mv ${DEFAULT_PIPELINE_DIR}/pipeline_output ./pipeline_output
+    - mv ${DEFAULT_PIPELINE_DIR}/pipeline_state/pipeline_ui_view.json ./pipeline_ui_view.json
+  artifacts:
+    name: "execution_results"
+    paths:
+      - ${DEFAULT_PIPELINE_DIR_ZIP}
+      - pipeline_output
+      - pipeline_ui_view.json
+      - full_execution.log
+    when: always
+    expire_in: 1 week

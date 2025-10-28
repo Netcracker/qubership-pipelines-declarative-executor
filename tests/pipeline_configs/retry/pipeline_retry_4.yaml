@@ -1,0 +1,42 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-1-cmd
+  name: Simple 1-Cmd Pipeline Lv.4
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    CALC_ARG1: 9
+    CALC_ARG2: 10
+
+  stages:
+    - name: Spam Cmd
+      job: template-py-stage
+      command: "spam"
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_3"
+
+    - name: CLI "Calc" That Fails
+      job: template-py-stage
+      command: "calc"
+      input:
+        params:
+          params:
+            param_1: ${CALC_ARG1}
+            param_2: ${CALC_ARG2}
+            operation: ${CALC_OPERATION}
+            result_name: CALC_RESULT
+      output:
+        params:
+          params: "*"
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}
+
+  configuration:
+    output:
+      params:
+        params:
+          CALC_RESULT: ${CALC_RESULT}

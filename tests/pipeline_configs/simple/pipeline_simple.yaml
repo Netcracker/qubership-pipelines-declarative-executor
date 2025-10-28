@@ -1,0 +1,18 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-1-cmd
+  name: Simple Pipeline
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    TEST_VAR: test_value
+
+  stages:
+    - name: Spam Cmd
+      job: template-py-stage
+      command: "spam"
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}
