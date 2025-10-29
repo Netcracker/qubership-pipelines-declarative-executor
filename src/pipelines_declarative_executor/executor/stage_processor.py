@@ -42,9 +42,19 @@ class StageProcessor:
             ContextFilesProcessor.prepare_stage_folder(execution, stage, parent_stage)
         try:
             if stage.type == StageType.PYTHON_MODULE:
-                command = f"python {stage.path} {stage.command} --context_path={stage.exec_dir.joinpath('context.yaml')}"
                 with LoggingUtils.Timer() as shell_timer:
-                    await StageProcessor._run_shell_command(execution, command, logged_cmd_name=f"{stage.path} {stage.command}")
+                    if EnvVar.USE_BUILTIN_COMMANDS:
+                        await StageProcessor._run_builtin_command(execution, stage.command,
+                                                                  stage.exec_dir.joinpath('context.yaml').as_posix(),
+                                                                  logged_cmd_name=f"{stage.path} {stage.command}")
+                    else:
+                        if EnvVar.USE_IMPORT_COMMANDS:
+                            await StageProcessor._run_command_via_import(execution, stage.path, stage.command,
+                                                                         stage.exec_dir.joinpath('context.yaml').as_posix(),
+                                                                         logged_cmd_name=f"{stage.path} {stage.command}")
+                        else:
+                            command = f"python {stage.path} {stage.command} --context_path={stage.exec_dir.joinpath('context.yaml')}"
+                            await StageProcessor._run_shell_command(execution, command, logged_cmd_name=f"{stage.path} {stage.command}")
             elif stage.type == StageType.SHELL_COMMAND:
                 await StageProcessor._run_shell_command(execution, stage.command, logged_cmd_name=stage.command)
             elif stage.type == StageType.PARALLEL_BLOCK:
@@ -134,6 +144,47 @@ class StageProcessor:
             if stderr:
                 execution.logger.error(f'Shell STDERR:\n{stderr.decode(errors="ignore").strip()}')
             raise Exception(f"Error during \"{logged_cmd_name}\"")
+
+    @staticmethod
+    async def _run_builtin_command(execution: PipelineExecution, cmd: str, context_path: str, expected_return_code: int = 0,
+                                 logged_cmd_name: str = "Shell Command"):
+        if execution.is_dry_run:
+            execution.logger.debug(f'[{logged_cmd_name}] skipped in DRY RUN')
+            return
+        from pipelines_declarative_executor.x_builtin_commands.sample_command import COMMAND_MAPPING
+        try:
+            cmd_cls = COMMAND_MAPPING.get(cmd)
+            if not cmd_cls:
+                raise Exception(f"Error: unknown builtin command '{cmd}'")
+            command = cmd_cls(context_path=context_path)
+            await command.run()
+        except asyncio.CancelledError:
+            execution.logger.warning("Shell Execution cancelled!")
+            raise
+        except SystemExit as e:
+            execution.logger.debug(f'[{logged_cmd_name}] finished with return_code={e.code}')
+            if e.code != expected_return_code:
+                raise Exception(f"Error during \"{logged_cmd_name}\"")
+
+    @staticmethod
+    async def _run_command_via_import(execution: PipelineExecution, module_path: str, cmd: str, context_path: str, expected_return_code: int = 0,
+                                 logged_cmd_name: str = "Shell Command"):
+        if execution.is_dry_run:
+            execution.logger.debug(f'[{logged_cmd_name}] skipped in DRY RUN')
+            return
+        try:
+            from pipelines_declarative_executor.x_builtin_commands.execution_command_importer import \
+                get_command_class_from_module
+            cmd_cls = get_command_class_from_module(module_path, cmd)
+            command = cmd_cls(context_path=context_path)
+            await command.run()
+        except asyncio.CancelledError:
+            execution.logger.warning("Shell Execution cancelled!")
+            raise
+        except SystemExit as e:
+            execution.logger.debug(f'[{logged_cmd_name}] finished with return_code={e.code}')
+            if e.code != expected_return_code:
+                raise Exception(f"Error during \"{logged_cmd_name}\"")
 
     @staticmethod
     async def _run_parallel_block(execution: PipelineExecution, parent_stage: Stage):

@@ -12,3 +12,4 @@ x_local_main_folder
 __pycache__/
 poetry.lock
 report_data.json
+full_execution.log

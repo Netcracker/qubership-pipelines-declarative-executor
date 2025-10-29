@@ -32,13 +32,16 @@ pipeline:
       - name: Spam Cmd 7
         job: template-py-stage
 
-      - name: Spam Cmd 8
+      - name: Spam Files 1
+        command: "spam-files"
         job: template-py-stage
 
-      - name: Spam Cmd 9
+      - name: Spam Files 2
+        command: "spam-files"
         job: template-py-stage
 
-      - name: Spam Cmd 10
+      - name: Spam Files 3
+        command: "spam-files"
         job: template-py-stage
 
   jobs:

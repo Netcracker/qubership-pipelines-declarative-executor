@@ -31,6 +31,8 @@ class EnvVar:
 
     # DEBUG ONLY
     IS_LOCAL_DEBUG = StringUtils.to_bool(os.getenv('PIPELINES_DECLARATIVE_EXECUTOR_IS_LOCAL_DEBUG', False))
+    USE_BUILTIN_COMMANDS = StringUtils.to_bool(os.getenv('PIPELINES_DECLARATIVE_EXECUTOR_USE_BUILTIN_COMMANDS', False))
+    USE_IMPORT_COMMANDS = StringUtils.to_bool(os.getenv('PIPELINES_DECLARATIVE_EXECUTOR_USE_IMPORT_COMMANDS', False))
 
 
 class EnvVarUtils:

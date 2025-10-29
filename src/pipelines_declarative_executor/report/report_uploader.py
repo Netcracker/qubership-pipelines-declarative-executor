@@ -1,8 +1,6 @@
-import asyncio, aiohttp, logging, json, io
+import asyncio, logging, json, io
 
 from aiohttp import BasicAuth
-from miniopy_async import Minio
-
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
 from pipelines_declarative_executor.model.report import RemoteEndpointConfig, HttpEndpointConfig, S3EndpointConfig, ReportUploadMode
 from pipelines_declarative_executor.model.stage import ExecutionStatus
@@ -18,11 +16,13 @@ class ReportUploader:
         self.s3_clients = []
         for config in configs:
             if isinstance(config, HttpEndpointConfig):
+                from aiohttp import ClientSession
                 self.http_sessions.append({
-                    "session": aiohttp.ClientSession(auth=config.auth, headers=config.headers),
+                    "session": ClientSession(auth=config.auth, headers=config.headers),
                     "endpoint": config.endpoint,
                 })
             elif isinstance(config, S3EndpointConfig):
+                from miniopy_async import Minio
                 self.s3_clients.append({
                     "client": Minio(
                         endpoint=config.host,
