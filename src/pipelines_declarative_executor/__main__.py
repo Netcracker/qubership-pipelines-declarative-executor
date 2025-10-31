@@ -20,6 +20,7 @@ def cli():
 def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is_dry_run: bool, log_level: str):
     LoggingUtils.CONSOLE_LOG_LEVEL = getattr(logging, log_level.upper(), logging.INFO)
     LoggingUtils.configure_root_logger()
+    LoggingUtils.log_env_vars()
     logging.info(f'command "RUN" with params:\npipeline_data="{pipeline_data}"\npipeline_vars="{pipeline_vars}"'
                  f'\npipeline_dir="{pipeline_dir}"\nis_dry_run="{is_dry_run}"\nlog_level="{log_level}"')
     with (LoggingUtils.time_it(), LoggingUtils.profile_it()):
@@ -35,6 +36,7 @@ def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is
 def __retry_pipeline(pipeline_dir: str, retry_vars: str, log_level: str):
     LoggingUtils.CONSOLE_LOG_LEVEL = getattr(logging, log_level.upper(), logging.INFO)
     LoggingUtils.configure_root_logger()
+    LoggingUtils.log_env_vars()
     logging.info(f'command "RETRY" with params:\npipeline_dir="{pipeline_dir}"\nretry_vars="{retry_vars}"'
                  f'\nlog_level="{log_level}"')
     with (LoggingUtils.time_it(), LoggingUtils.profile_it()):
@@ -113,6 +115,7 @@ if __name__ == '__main__':
     if EnvVar.IS_LOCAL_DEBUG:
         # local_setup()
         LoggingUtils.configure_root_logger()
+        LoggingUtils.log_env_vars()
         logging.debug("=" * 60)
         logging.warning("RUNNING IN LOCAL DEBUG MODE!")
         with (LoggingUtils.time_it("Total time"), LoggingUtils.profile_it()):
