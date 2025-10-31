@@ -85,3 +85,17 @@ class LoggingUtils:
         logger.addHandler(file_handler)
 
         return logger
+
+    @staticmethod
+    def log_env_vars():
+        logged_vars = [
+            "MAX_CONCURRENT_STAGES", "GLOBAL_CONFIGS_PREFIX",
+            "ENABLE_FULL_EXECUTION_LOG", "ENABLE_PROFILER_STATS", "ENABLE_MODULE_STDOUT_LOG",
+            "REPORT_SEND_MODE", "REPORT_SEND_INTERVAL", "REPORT_STATUS_POLL_INTERVAL",
+            "ENCRYPT_OUTPUT_PARAMS", "FAIL_ON_MISSING_SOPS",
+            "SHELL_PROCESS_TIMEOUT", "SOPS_PROCESS_TIMEOUT",
+            "PYTHON_MODULE_PATH", "EXECUTION_URL", "EXECUTION_USER", "EXECUTION_EMAIL",
+            "IS_LOCAL_DEBUG",
+        ]
+        env_info = "\n".join([f"{var_name}: {getattr(EnvVar, var_name)}" for var_name in logged_vars])
+        logging.info(env_info)
