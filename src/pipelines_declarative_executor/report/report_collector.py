@@ -6,14 +6,19 @@ from pipelines_declarative_executor.model.stage import Stage, StageType
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
 from pipelines_declarative_executor.utils.constants import Constants
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
+from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 
 class ReportCollector:
+
+    NESTED_PIPELINE = "nestedPipeline"
+    PARALLEL_STAGES = "parallelStages"
+
     @staticmethod
     def prepare_ui_view(execution: PipelineExecution) -> dict:
         ui_view = {
-            "kind": "pipelineExecutionReport",
-            "apiVersion": "v1",
+            "kind": "AtlasPipelineReport",
+            "apiVersion": "v2",
             "execution": ReportCollector._prepare_execution(execution),
             "config": ReportCollector._prepare_config(execution),
             "stages": [],
@@ -29,8 +34,9 @@ class ReportCollector:
             "name": execution.pipeline.name,
             "status": execution.status,
             "code": execution.code,
-            "start_time": execution.start_time,
-            "finish_time": execution.finish_time,
+            "startedAt": execution.start_time,
+            "finishedAt": execution.finish_time,
+            "time": StringUtils.get_duration_str(execution.start_time, execution.finish_time),
             "url": EnvVar.EXECUTION_URL,
             "user": EnvVar.EXECUTION_USER,
             "email": EnvVar.EXECUTION_EMAIL,
@@ -49,8 +55,11 @@ class ReportCollector:
     @staticmethod
     def _prepare_stage_data(stage: Stage) -> dict:
         stage_data = {"id": stage.uuid}
-        for field in ["name", "path", "type", "command", "status", "start_time", "finish_time", "exec_dir", "url"]:
-            stage_data[field] = getattr(stage, field, None)
+        for field_mapping in ["name", "path", "type", "command", "status", ("start_time", "startedAt"),
+                              ("finish_time", "finishedAt"), "time", ("exec_dir", "execDir"), "url"]:
+            model_field, report_field = field_mapping if isinstance(field_mapping, tuple) else (field_mapping, field_mapping)
+            stage_data[report_field] = getattr(stage, model_field, None)
+        stage_data["time"] = StringUtils.get_duration_str(stage.start_time, stage.finish_time)
 
         if stage.evaluated_params:
             stage_data.update(copy.deepcopy(stage.evaluated_params))
@@ -59,12 +68,11 @@ class ReportCollector:
                     stage_data[params_type]["params_secure"] = ReportCollector._mask_secure_params(params_secure)
 
         if stage.type == StageType.PARALLEL_BLOCK:
-            stage_data["nested_parallel_stages"] = []
+            stage_data[ReportCollector.PARALLEL_STAGES] = []
             for nested_stage in stage.nested_parallel_stages:
-                stage_data["nested_parallel_stages"].append(ReportCollector._prepare_stage_data(nested_stage))
-        elif stage.type == StageType.NESTED_PIPELINE:
-            stage_data["nested_pipeline"] = ReportCollector._extract_ui_view(stage)
-            pass
+                stage_data[ReportCollector.PARALLEL_STAGES].append(ReportCollector._prepare_stage_data(nested_stage))
+        elif stage.type == StageType.ATLAS_PIPELINE_TRIGGER:
+            stage_data[ReportCollector.NESTED_PIPELINE] = ReportCollector._extract_ui_view(stage)
 
         return stage_data
 
@@ -81,7 +89,3 @@ class ReportCollector:
             if nested_ui_view_path.exists():
                 return CommonUtils.load_json_file(nested_ui_view_path)
         return {}
-
-    # @staticmethod
-    # def _prepare_vars(execution: PipelineExecution) -> list:
-    #     return execution.vars.all_vars_with_sources()

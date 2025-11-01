@@ -128,7 +128,7 @@ class ContextFilesProcessor:
         output_params = (stage.evaluated_params or {}).get('output', {})
         params, params_secure = output_params.get('params', {}), output_params.get('params_secure', {})
         ParamsProcessor.set_stage_output_vars(execution.vars, params, params_secure, stage.id, stage.uuid)
-        stage_dir = stage.exec_dir if stage.type != StageType.NESTED_PIPELINE else stage.exec_dir.joinpath(Constants.PIPELINE_OUTPUT_DIR_NAME)
+        stage_dir = stage.exec_dir if stage.type != StageType.ATLAS_PIPELINE_TRIGGER else stage.exec_dir.joinpath(Constants.PIPELINE_OUTPUT_DIR_NAME)
         ContextFilesProcessor.store_files_info(output_params, execution, stage, stage_dir)
         if stage.type == StageType.PARALLEL_BLOCK and stage.nested_parallel_stages:
             for child_stage in stage.nested_parallel_stages:

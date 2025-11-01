@@ -152,12 +152,12 @@ async function createStageElement(stage) {
     const row = document.createElement('div');
     row.className = 'stage-row';
 
-    if (stage.nested_parallel_stages && stage.nested_parallel_stages.length > 0) {
+    if (stage.parallelStages && stage.parallelStages.length > 0) {
         const parallelGroup = document.createElement('div');
         parallelGroup.className = 'parallel-group';
 
         const parallelBlocks = await Promise.all(
-            stage.nested_parallel_stages.map(parallelStage =>
+            stage.parallelStages.map(parallelStage =>
                 createStageElement(parallelStage).catch(e => {
                     console.error('Error creating parallel stage:', e);
                     return null;
@@ -193,8 +193,8 @@ async function createStageBlock(stage) {
         block.appendChild(duration);
     }
 
-    if (stage.type === 'NESTED_PIPELINE' && stage.nested_pipeline) {
-        const nestedData = stage.nested_pipeline;
+    if (stage.type === 'ATLAS_PIPELINE_TRIGGER' && stage.nestedPipeline) {
+        const nestedData = stage.nestedPipeline;
         if (nestedData && nestedData.stages) {
             block.classList.add('has-nested');
 

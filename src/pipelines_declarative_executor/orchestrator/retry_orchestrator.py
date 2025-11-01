@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from pathlib import Path
 
 from pipelines_declarative_executor.executor.params_processor import ParamsProcessor
@@ -126,7 +127,10 @@ class PipelineRetryOrchestrator:
             stage.nested_parallel_stages = []
             for nested_stage in nested_stage_dicts:
                 stage.nested_parallel_stages.append(PipelineRetryOrchestrator._load_stage_from_dict(nested_stage))
-        # todo: datetime deserializing?
+        if start_time := stage_dict.get("start_time"):
+            stage.start_time = datetime.fromisoformat(start_time)
+        if finish_time := stage_dict.get("finish_time"):
+            stage.finish_time = datetime.fromisoformat(finish_time)
         return stage
 
     @staticmethod
@@ -146,7 +150,7 @@ class PipelineRetryOrchestrator:
     def _update_stage(stage: Stage, found_failed: bool) -> bool:
         if stage.type == StageType.PARALLEL_BLOCK:
             found_failed = PipelineRetryOrchestrator._update_parallel_stage(stage, found_failed) or found_failed
-        elif stage.type == StageType.NESTED_PIPELINE:
+        elif stage.type == StageType.ATLAS_PIPELINE_TRIGGER:
             found_failed = PipelineRetryOrchestrator._update_nested_stage(stage, found_failed) or found_failed
         else:
             found_failed = PipelineRetryOrchestrator._update_action_stage(stage, found_failed) or found_failed

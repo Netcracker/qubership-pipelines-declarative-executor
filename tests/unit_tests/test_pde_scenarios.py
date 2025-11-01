@@ -1,6 +1,6 @@
 import os, re, yaml, logging, unittest, time
 
-from tests.unit_tests.common import ExecutorTestCase
+from common import ExecutorTestCase
 
 
 #@unittest.skip("skipping...")

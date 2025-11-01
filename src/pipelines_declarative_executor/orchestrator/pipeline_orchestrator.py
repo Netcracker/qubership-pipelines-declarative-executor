@@ -115,6 +115,8 @@ class PipelineOrchestrator:
         stage.uuid = str(uuid.uuid4())
 
         if parallel_block := merged_stage_data.get('parallel', []):
+            if isinstance(parallel_block, dict):
+                parallel_block = list(parallel_block.values())
             stage.nested_parallel_stages = []
             stage.type = StageType.PARALLEL_BLOCK
             for nested_stage_index, nested_stage_data in enumerate(parallel_block):
