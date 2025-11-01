@@ -49,7 +49,7 @@ class StageProcessor:
                 await StageProcessor._run_shell_command(execution, stage.command, logged_cmd_name=stage.command)
             elif stage.type == StageType.PARALLEL_BLOCK:
                 await StageProcessor._run_parallel_block(execution, stage)
-            elif stage.type == StageType.NESTED_PIPELINE:
+            elif stage.type == StageType.ATLAS_PIPELINE_TRIGGER:
                 await StageProcessor._run_nested_pipeline(execution, stage)
             else:
                 raise Exception(f"Unknown stage type: '{stage.type}'")
@@ -85,7 +85,7 @@ class StageProcessor:
             ContextFilesProcessor.store_retried_stage_results(execution, stage)
             return True
 
-        if stage.type == StageType.NESTED_PIPELINE and stage.status == ExecutionStatus.IN_PROGRESS:
+        if stage.type == StageType.ATLAS_PIPELINE_TRIGGER and stage.status == ExecutionStatus.IN_PROGRESS:
             setattr(stage, StageProcessor.RETRY_NESTED_FLAG, True)
             return False
 
