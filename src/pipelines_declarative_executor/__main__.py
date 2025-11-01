@@ -46,21 +46,23 @@ def __retry_pipeline(pipeline_dir: str, retry_vars: str, log_level: str):
 @cli.command("archive")
 @click.option('--pipeline_dir', required=True, type=str, help="Path to directory where pipeline was executed")
 @click.option('--target_path', required=True, type=str, help="Path to resulting archive")
-def __archive_pipeline(pipeline_dir: str, target_path: str):
+@click.option('--fail_on_missing', required=False, default=False, type=bool, help="Should this command fail if archived path is not present")
+def __archive_pipeline(pipeline_dir: str, target_path: str, fail_on_missing: bool):
     LoggingUtils.configure_root_logger()
     logging.info(f'command "ARCHIVE" with params:\npipeline_dir="{pipeline_dir}"\ntarget_path="{target_path}"')
     from pipelines_declarative_executor.utils.archive_utils import ArchiveUtils
-    ArchiveUtils.archive(pipeline_dir, target_path)
+    ArchiveUtils.archive(pipeline_dir, target_path, fail_on_missing)
 
 
 @cli.command("unarchive")
-@click.option('--archive_path', required=True, type=str, help="Path to archive with pipeline execution")
+@click.option('--archive_path', required=True, type=str, help="Path with archive with pipeline execution")
 @click.option('--target_path', required=True, type=str, help="Path where it will be extracted")
-def __archive_pipeline(archive_path: str, target_path: str):
+@click.option('--fail_on_missing', required=False, default=False, type=bool, help="Should this command fail if archived path is not present")
+def __unarchive_pipeline(archive_path: str, target_path: str, fail_on_missing: bool):
     LoggingUtils.configure_root_logger()
     logging.info(f'command "UNARCHIVE" with params:\narchive_path="{archive_path}"\ntarget_path="{target_path}"')
     from pipelines_declarative_executor.utils.archive_utils import ArchiveUtils
-    ArchiveUtils.unarchive(archive_path, target_path)
+    ArchiveUtils.unarchive(archive_path, target_path, fail_on_missing)
 
 
 async def create_and_run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is_dry_run: bool):

@@ -1,23 +1,15 @@
-import os, re, yaml, logging, subprocess, unittest, time
+import os, re, yaml, logging, unittest, time
+
+from tests.unit_tests.common import ExecutorTestCase
 
 
 #@unittest.skip("skipping...")
-class TestPipelinesDeclarativeExecutor(unittest.TestCase):
+class TestPipelinesDeclarativeExecutor(ExecutorTestCase):
 
     PDE_CLI = ["python", "-m", "pipelines_declarative_executor"]
 
     def setUp(self):
         logging.info(os.getcwd())
-
-    def _run_and_log(self, command):
-        logging.info(f"Running command: {' '.join(command)}")
-        result = subprocess.run(command, capture_output=True, text=True, timeout=15)
-        if result.stdout:
-            logging.info(f"STDOUT:\n{result.stdout}")
-        if result.stderr:
-            logging.info(f"STDERR:\n{result.stderr}")
-        logging.info(f"Return code: {result.returncode}")
-        return result
 
     def test_help_option(self):
         output = self._run_and_log([*self.PDE_CLI, "--help"])
