@@ -2,7 +2,7 @@ import copy
 
 from pipelines_declarative_executor.executor.params_processor import ParamsProcessor
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
-from pipelines_declarative_executor.model.stage import Stage, StageType
+from pipelines_declarative_executor.model.stage import Stage, StageType, ExecutionStatus
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
 from pipelines_declarative_executor.utils.constants import Constants
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
@@ -13,6 +13,9 @@ class ReportCollector:
 
     NESTED_PIPELINE = "nestedPipeline"
     PARALLEL_STAGES = "parallelStages"
+    __FINISHED_STAGES: dict[str, dict] = {}
+    __FINAL_STATUSES = [ExecutionStatus.SKIPPED, ExecutionStatus.SUCCESS,
+                        ExecutionStatus.FAILED, ExecutionStatus.CANCELLED]
 
     @staticmethod
     def prepare_ui_view(execution: PipelineExecution) -> dict:
@@ -54,6 +57,9 @@ class ReportCollector:
 
     @staticmethod
     def _prepare_stage_data(stage: Stage) -> dict:
+        if stage_data := ReportCollector.__FINISHED_STAGES.get(stage.uuid):
+            return stage_data
+
         stage_data = {"id": stage.uuid}
         for field_mapping in ["name", "path", "type", "command", "status", ("start_time", "startedAt"),
                               ("finish_time", "finishedAt"), "time", ("exec_dir", "execDir"), "url"]:
@@ -74,6 +80,11 @@ class ReportCollector:
         elif stage.type == StageType.ATLAS_PIPELINE_TRIGGER:
             stage_data[ReportCollector.NESTED_PIPELINE] = ReportCollector._extract_ui_view(stage)
 
+        if moduleReport := ReportCollector._extract_module_report(stage):
+            stage_data["moduleReport"] = moduleReport
+
+        if stage.status in ReportCollector.__FINAL_STATUSES:
+            ReportCollector.__FINISHED_STAGES[stage.uuid] = stage_data
         return stage_data
 
     @staticmethod
@@ -89,3 +100,18 @@ class ReportCollector:
             if nested_ui_view_path.exists():
                 return CommonUtils.load_json_file(nested_ui_view_path)
         return {}
+
+    @staticmethod
+    def _extract_module_report(stage: Stage):
+        if stage.exec_dir:
+            try:
+                report_path = stage.exec_dir.joinpath(Constants.STAGE_LOGS_DIR_NAME).joinpath(Constants.STAGE_REPORT_JSON_FILE_NAME)
+                if report_path.exists():
+                    return CommonUtils.load_json_file(report_path)
+                report_path = stage.exec_dir.joinpath(Constants.STAGE_LOGS_DIR_NAME).joinpath(Constants.STAGE_REPORT_YAML_FILE_NAME)
+                if report_path.exists():
+                    return CommonUtils.load_yaml_file(report_path)
+            except Exception as e:
+                import logging
+                logging.warning(f"Something went wrong when collecting moduleReport from \"{stage.id}\" - [{type(e)} - {str(e)}]")
+        return None

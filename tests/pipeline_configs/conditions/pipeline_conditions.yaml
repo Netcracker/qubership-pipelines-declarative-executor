@@ -1,0 +1,60 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-calculator
+  name: Test Pipeline Calculator
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    CALC_ARG1: 8
+    CALC_ARG2: 9
+    INPUT_KEYWORD: "default_value"
+
+  stages:
+    - name: Command that fails
+      job: template-py-stage
+      command: "non-existing-command-that-will-fail"
+      when:
+        condition: "INPUT_KEYWORD in ['list', 'of', 'correct', 'words']"
+
+    - name: Command that changes CALC_ARG1 when failed
+      job: template-py-stage
+      command: "calc"
+      when:
+        statuses: FAILED
+      input:
+        params:
+          params:
+            param_1: 5
+            param_2: 2
+            operation: multiply
+            result_name: CALC_ARG1
+      output:
+        params:
+          params: "*"
+
+    - name: Calc final result
+      job: template-py-stage
+      command: "calc"
+      when:
+        statuses: SUCCESS, FAILED
+      input:
+        params:
+          params:
+            param_1: ${CALC_ARG1}
+            param_2: ${CALC_ARG2}
+            operation: add
+            result_name: CALC_RESULT
+      output:
+        params:
+          params: "*"
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}
+
+  configuration:
+    output:
+      params:
+        params:
+          CALC_RESULT: ${CALC_RESULT}

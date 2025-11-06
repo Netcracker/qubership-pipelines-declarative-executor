@@ -14,8 +14,6 @@ jobs:
   build-image-and-run-tests:
     runs-on: ubuntu-latest
     env:
-      CUSTOM_GLOBAL_CONFIG_WITH_SECRETS: ${{ secrets.GLOBAL_CONFIG }}
-      CUSTOM_GLOBAL_CONFIG_INVALID_KIND: ${{ secrets.GLOBAL_CONFIG_INVALID_KIND }}
       SOPS_AGE_RECIPIENTS: ${{ secrets.SOPS_AGE_RECIPIENTS }}
       SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
       PIPELINES_DECLARATIVE_EXECUTOR_EXECUTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -35,7 +33,6 @@ jobs:
           -v $GITHUB_STEP_SUMMARY:/github-step-summary \
           -e GITHUB_STEP_SUMMARY=/github-step-summary \
           -e SOPS_AGE_RECIPIENTS -e SOPS_AGE_KEY \
-          -e CUSTOM_GLOBAL_CONFIG_WITH_SECRETS -e CUSTOM_GLOBAL_CONFIG_INVALID_KIND \
           -e PIPELINES_DECLARATIVE_EXECUTOR_EXECUTION_URL \
           -e PIPELINES_DECLARATIVE_EXECUTOR_EXECUTION_USER -e PIPELINES_DECLARATIVE_EXECUTOR_EXECUTION_EMAIL \
           -w /tests \

@@ -172,7 +172,7 @@ class PipelineRetryOrchestrator:
             PipelineRetryOrchestrator._reset_stage(stage, reset_nested=True)
         else:
             found_failed_at_this_block = stage.status in PipelineRetryOrchestrator.FAILED_STATUSES
-            if stage.exec_dir and found_failed_at_this_block: # hmmmm, we don't want to go inside if we see SUCCESS/SKIPPED, and this does it
+            if stage.exec_dir and found_failed_at_this_block: # we don't want to go inside if we see SUCCESS/SKIPPED, and this does it
                 nested_pipeline_json_path = stage.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME).joinpath(Constants.STATE_PIPELINE_FILE_NAME)
                 if nested_pipeline_json_path.exists():
                     nested_pipeline = PipelineRetryOrchestrator.load_pipeline_from_dict(CommonUtils.load_json_file(nested_pipeline_json_path))

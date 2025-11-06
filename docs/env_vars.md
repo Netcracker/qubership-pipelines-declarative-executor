@@ -19,7 +19,7 @@
 | Name                                                        | Default Value | Comment                                                                                                         |
 |-------------------------------------------------------------|:-------------:|-----------------------------------------------------------------------------------------------------------------|
 | PIPELINES_DECLARATIVE_EXECUTOR_FAIL_ON_MISSING_SOPS         |     True      | Whether config parsing should fail (or just ignore it) if we encounter SOPS-encrypted file and can't decrypt it |
-| PIPELINES_DECLARATIVE_EXECUTOR_ENCRYPT_OUTPUT_SECURE_PARAMS |     True      | Env Vars with this prefix will be treated as AtlasConfigs                                                       |
+| PIPELINES_DECLARATIVE_EXECUTOR_ENCRYPT_OUTPUT_SECURE_PARAMS |     True      | Whether resulting pipeline's `output_params_secure.yaml` should be SOPS-encrypted                               |
 | SOPS_AGE_RECIPIENTS                                         |     None      | SOPS Public key (used for for encryption)                                                                       |
 | SOPS_AGE_KEY                                                |     None      | SOPS Private key (used for for decryption)                                                                      |
 | PIPELINES_DECLARATIVE_EXECUTOR_SOPS_PROCESS_TIMEOUT         |      10       | Timeout in seconds for invoked SOPS encryption/decryption subprocesses                                          |

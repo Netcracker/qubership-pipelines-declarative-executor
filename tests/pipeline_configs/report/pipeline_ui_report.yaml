@@ -1,0 +1,15 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-with-ui-report
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+
+  stages:
+    - name: Generate Output Params
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_3"

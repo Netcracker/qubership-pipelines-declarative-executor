@@ -1,0 +1,25 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-parallel-dict
+
+  stages:
+    - name: Parallel Parent - Key-Value Syntax
+      parallel:
+        cmd1:
+          name: Spam Cmd 1
+          job: template-py-stage
+
+        cmd2:
+          name: Spam Cmd 2
+          job: template-py-stage
+
+        cmd3:
+          name: Spam Cmd 3
+          job: template-py-stage
+
+  jobs:
+    template-py-stage:
+      type: PYTHON_MODULE
+      command: "spam"

@@ -1,4 +1,4 @@
-import pathlib, shutil
+import shutil
 from pathlib import Path
 
 from pipelines_declarative_executor.executor.params_processor import ParamsProcessor
@@ -35,10 +35,16 @@ class ContextFilesProcessor:
             ContextFilesProcessor._copy_context_files(src_path, file_path, stage.exec_dir)
         stage.evaluated_params['input'] = input_calculated
 
+        if stage.type == StageType.REPORT:
+            shutil.copyfile(
+                execution.state_dir.joinpath(Constants.UI_VIEW_FILE_NAME),
+                stage.exec_dir.joinpath(Constants.STAGE_INPUT_FILES_DIR_NAME).joinpath(Constants.STAGE_REPORT_JSON_FILE_NAME)
+            )
+
     @staticmethod
-    def _copy_context_files(src_path: pathlib.Path, dst_path: str,
-                            dst_context_dir_path: pathlib.Path,
-                            dst_files_folder_name: str = "input_files"):
+    def _copy_context_files(src_path: Path, dst_path: str,
+                            dst_context_dir_path: Path,
+                            dst_files_folder_name: str = Constants.STAGE_INPUT_FILES_DIR_NAME):
         if src_path.is_dir():
             if dst_path:
                 dst_path = dst_context_dir_path.joinpath(dst_files_folder_name).joinpath(dst_path)
@@ -50,7 +56,7 @@ class ContextFilesProcessor:
                 dst_path = dst_context_dir_path.joinpath(dst_files_folder_name).joinpath(dst_path)
             else:
                 parts = src_path.parts
-                last_index = len(parts) - 1 - parts[::-1].index('output_files')
+                last_index = len(parts) - 1 - parts[::-1].index(Constants.STAGE_OUTPUT_FILES_DIR_NAME)
                 dst_path = dst_context_dir_path.joinpath(dst_files_folder_name).joinpath(Path(*parts[last_index + 1:]))
             if dirpath := dst_path.parent:
                 dirpath.mkdir(parents=True, exist_ok=True)
@@ -91,9 +97,9 @@ class ContextFilesProcessor:
         files_info = {}
         for file_key, file_path in output_cfg.get('files', {}).items():
             if file_path == '*':
-                full_file_path = stage_dir.joinpath("output_files")
+                full_file_path = stage_dir.joinpath(Constants.STAGE_OUTPUT_FILES_DIR_NAME)
             else:
-                full_file_path = stage_dir.joinpath("output_files").joinpath(file_path)
+                full_file_path = stage_dir.joinpath(Constants.STAGE_OUTPUT_FILES_DIR_NAME).joinpath(file_path)
             if not full_file_path.exists():
                 execution.logger.warning(f"Tried to store non-existing path in stage {stage.id}: {file_key} = {full_file_path}")
             else:
@@ -121,7 +127,7 @@ class ContextFilesProcessor:
                 execution.logger.warning(f"Pipeline {execution.pipeline.logged_name()} requested non-existing file \"{file_key}\"!")
                 continue
             src_path = execution.vars.files_info.get(file_key)
-            ContextFilesProcessor._copy_context_files(src_path, file_path, execution.output_dir, "output_files")
+            ContextFilesProcessor._copy_context_files(src_path, file_path, execution.output_dir, Constants.STAGE_OUTPUT_FILES_DIR_NAME)
 
     @staticmethod
     def store_retried_stage_results(execution: PipelineExecution, stage: Stage):
