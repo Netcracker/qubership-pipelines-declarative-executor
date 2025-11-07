@@ -1,0 +1,65 @@
+{
+  "kind": "AtlasPipelineReport",
+  "apiVersion": "v2",
+  "execution": {
+    "id": "579184be-140c-4139-8253-4ce958297a96",
+    "name": "Atlas Pipeline",
+    "status": "NOT_STARTED",
+    "code": null,
+    "startedAt": null,
+    "finishedAt": null,
+    "time": "N/A",
+    "url": null,
+    "user": null,
+    "email": null
+  },
+  "config": [
+    {
+      "name": "PIPELINE_DATA",
+      "value": "pipeline_configs/report/pipeline_ui_report.yaml",
+      "source": {
+        "kind": "INPUT_VAR",
+        "name": "CLI_INPUT"
+      }
+    },
+    {
+      "name": "IS_DRY_RUN",
+      "value": false,
+      "source": {
+        "kind": "INPUT_VAR",
+        "name": "CLI_INPUT"
+      }
+    },
+    {
+      "name": "IS_RETRY",
+      "value": false,
+      "source": {
+        "kind": "INPUT_VAR",
+        "name": "CLI_INPUT"
+      }
+    },
+    {
+      "name": "STAGE_TYPE_PY",
+      "value": "PYTHON_MODULE",
+      "source": {
+        "kind": "LOCAL_FILE",
+        "path": "pipeline_configs/report/pipeline_ui_report.yaml"
+      }
+    }
+  ],
+  "stages": [
+    {
+      "id": "65ccbab8-0a07-47ab-bdf3-d0dec4b1aa07",
+      "name": "Generate Output Params",
+      "path": "/app/quber_cli",
+      "type": "PYTHON_MODULE",
+      "command": "spam",
+      "status": "SUCCESS",
+      "startedAt": "2025-05-04T12:00:00",
+      "finishedAt": "2025-05-04T12:01:11.111111",
+      "time": "00:01:11",
+      "execDir": null,
+      "url": null
+    }
+  ]
+}

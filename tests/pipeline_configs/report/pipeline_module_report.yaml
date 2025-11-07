@@ -1,0 +1,48 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-with-module-report
+  name: Module Reports and Report Stage Type test
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    STAGE_TYPE_REPORT: REPORT
+
+  stages:
+    - name: Generate Output Params
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_3"
+
+    - name: Generate Output Files
+      type: ${STAGE_TYPE_PY}
+      command: "spam-files"
+      input:
+        params:
+          params:
+            files_count: 5
+
+    - name: Generate Module Report
+      type: ${STAGE_TYPE_PY}
+      command: "spam-module-report"
+      input:
+        params:
+          params:
+            params_count: 5
+            extension: json
+
+    - name: Build HTML Report
+      type: ${STAGE_TYPE_REPORT}
+      command: "generate-html-report"
+      output:
+        files:
+          report.html: report.html
+
+  configuration:
+    output:
+      params:
+        RESULT_SPAM: ${RESULT_SPAM}
+      files:
+        report.html: ""

@@ -1,0 +1,23 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-parallel-list
+
+  stages:
+    - name: Parallel Parent - List Syntax
+      parallel:
+      - name: Spam Cmd 1
+        job: template-py-stage
+
+      - name: Spam Cmd 2
+        job: template-py-stage
+
+      - name: Spam Cmd 3
+        job: template-py-stage
+
+
+  jobs:
+    template-py-stage:
+      type: PYTHON_MODULE
+      command: "spam"

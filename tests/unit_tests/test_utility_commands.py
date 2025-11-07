@@ -11,6 +11,10 @@ class TestUtilityCommands(ExecutorTestCase):
     def setUp(self):
         logging.info(os.getcwd())
 
+    def test_help_option(self):
+        output = self._run_and_log([*self.PDE_CLI, "--help"])
+        self.assertTrue("Commands:" in output.stdout + output.stderr)
+
     def test_create_archive_and_unarchive(self):
         archived_dir = "./test_archived_dir"
         archive_path = "./TARGET.zip"

@@ -37,11 +37,12 @@ class StageProcessor:
         stage.status = ExecutionStatus.IN_PROGRESS
         execution.store_state() # just for UI realtime rendering?
 
-        shell_timer, store_results_timer = None, None
-        with LoggingUtils.Timer() as prepare_files_timer:
-            ContextFilesProcessor.prepare_stage_folder(execution, stage, parent_stage)
         try:
-            if stage.type == StageType.PYTHON_MODULE:
+            shell_timer, store_results_timer = None, None
+            with LoggingUtils.Timer() as prepare_files_timer:
+                ContextFilesProcessor.prepare_stage_folder(execution, stage, parent_stage)
+
+            if stage.type in [StageType.PYTHON_MODULE, StageType.REPORT]:
                 command = f"python {stage.path} {stage.command} --context_path={stage.exec_dir.joinpath('context.yaml')}"
                 with LoggingUtils.Timer() as shell_timer:
                     await StageProcessor._run_shell_command(execution, command, logged_cmd_name=f"{stage.path} {stage.command}")
@@ -67,7 +68,7 @@ class StageProcessor:
             raise StageExecutionException(f"Stage {stage.name} failed")
         finally:
             StageProcessor._post_process(execution, stage)
-            if stage.type == StageType.PYTHON_MODULE and EnvVar.ENABLE_PROFILER_STATS:
+            if stage.type in [StageType.PYTHON_MODULE, StageType.REPORT] and EnvVar.ENABLE_PROFILER_STATS:
                 if shell_timer and prepare_files_timer and store_results_timer:
                     execution.logger.debug(
                         f"Total stage time: {(stage.finish_time - stage.start_time).total_seconds() * 1000:.0f} ms, "

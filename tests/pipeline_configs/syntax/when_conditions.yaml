@@ -1,0 +1,32 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-when
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    INPUT_KEYWORD: "default_value"
+
+  stages:
+    - name: Command With Condition
+      job: template-py-stage
+      command: "spam"
+      when:
+        condition: "INPUT_KEYWORD in ['list', 'of', 'correct', 'words']"
+
+    - name: Command With Statuses
+      job: template-py-stage
+      command: "spam"
+      when:
+        statuses: SUCCESS, FAILED
+
+    - name: Command With Everything
+      job: template-py-stage
+      command: "spam"
+      when:
+        statuses: FAILED
+        condition: "INPUT_KEYWORD == 'correct'"
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}

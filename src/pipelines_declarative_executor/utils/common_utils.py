@@ -1,7 +1,7 @@
 # ruff: noqa: F821
 from __future__ import annotations
 
-import json, copy, shutil
+import json, yaml, copy, shutil
 
 from pathlib import Path
 from pipelines_declarative_executor.model.stage import ExecutionStatus, Stage
@@ -22,9 +22,19 @@ class CommonUtils:
             fs.write(json.dumps(obj, indent=(2 if pretty else None), default=StringUtils.json_encode))
 
     @staticmethod
+    def dump_json(obj, pretty: bool = False) -> str:
+        from pipelines_declarative_executor.utils.string_utils import StringUtils
+        return json.dumps(obj, indent=(2 if pretty else None), default=StringUtils.json_encode)
+
+    @staticmethod
     def load_json_file(file_path: str | Path) -> list | dict:
         with open(file_path) as file:
             return json.load(file)
+
+    @staticmethod
+    def load_yaml_file(file_path: str | Path) -> list | dict:
+        with open(file_path) as file:
+            return yaml.safe_load(file)
 
     @staticmethod
     def traverse(obj: dict | list, path: list = [], traverse_nested_lists: bool = True):

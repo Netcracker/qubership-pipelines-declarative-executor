@@ -46,6 +46,7 @@ AtlasPipeline supports four stage types:
 2. `SHELL_COMMAND` - Run shell commands and scripts
 3. `PARALLEL_BLOCK` - Execute multiple stages concurrently (only used internally and in UI report, not specified explicitly in stage definition)
 4. `ATLAS_PIPELINE_TRIGGER` - Invoke other AtlasPipeline definitions
+5. `REPORT` - Inherits all properties of `PYTHON_MODULE`, but will also get current `execution_report.json` in it's `input_files` directory for further processing
 
 ### Module path
 
@@ -148,6 +149,19 @@ stages:
         operation: ${CALC_OPERATION}
 ```
 
+### 'When' Conditions
+
+Declare conditions that defined whether the stage will be executed or not:
+
+```yaml
+- name: Stage with conditions
+  type: PYTHON_MODULE
+  command: "spam"
+  when:
+    statuses: SUCCESS, FAILED
+    condition: "SOME_VARIABLE in ['allowed', 'values', 'list']"
+```
+
 ### Parallel Execution
 
 Use the `parallel` block to execute multiple stages concurrently:
@@ -189,7 +203,7 @@ If you are collecting output params from parallel stages, be sure to collect the
 
 ### Nested Pipelines
 
-Nested pipelines (aka "Atlas Pipeline Triggers") allow you to reuse pipeline definitions and create hierarchical workflows:
+Nested pipelines (aka "Atlas Pipeline Triggers") allow you to reuse pipeline definitions and create hierarchical workflows by invoking another pipeline from the current one:
 
 ```yaml
 - name: Nested Pipeline
