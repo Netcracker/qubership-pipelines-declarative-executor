@@ -2,7 +2,7 @@ FROM python:3.11-slim
 LABEL org.opencontainers.image.description="Qubership Pipelines Declarative Executor"
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full curl podman nftables slirp4netns fuse-overlayfs && rm -rf /var/lib/apt/lists/*
 
 # Install SOPS
 RUN curl -LO https://github.com/getsops/sops/releases/download/v3.10.2/sops-v3.10.2.linux.amd64 && \
@@ -17,6 +17,16 @@ ADD https://github.com/Netcracker/qubership-pipelines-cli-command-samples/releas
 RUN mkdir -p /app/quber_cli && \
     7z x qubership_cli_samples.pyz -o/app/quber_cli/ -y && \
     rm qubership_cli_samples.pyz
+
+# Setup podman
+RUN cat <<EOF > /etc/containers/storage.conf
+[storage]
+driver = "overlay"
+runroot = "/run/containers/storage"
+graphroot = "/var/lib/containers/storage"
+[storage.options]
+mount_program = "/usr/bin/fuse-overlayfs"
+EOF
 
 ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONPATH=/app/src
