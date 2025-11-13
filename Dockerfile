@@ -2,7 +2,7 @@ FROM python:3.11-slim
 LABEL org.opencontainers.image.description="Qubership Pipelines Declarative Executor"
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full curl podman nftables iptables && rm -rf /var/lib/apt/lists/*
 
 # Install SOPS
 RUN curl -LO https://github.com/getsops/sops/releases/download/v3.10.2/sops-v3.10.2.linux.amd64 && \
@@ -17,6 +17,14 @@ ADD https://github.com/Netcracker/qubership-pipelines-cli-command-samples/releas
 RUN mkdir -p /app/quber_cli && \
     7z x qubership_cli_samples.pyz -o/app/quber_cli/ -y && \
     rm qubership_cli_samples.pyz
+
+# Install podman
+# Force Podman to use iptables instead of nftables
+#RUN cat <<EOF > /etc/containers/containers.conf
+#[engine]
+#cgroups = "disabled"
+#firewall_driver = "iptables"
+#EOF
 
 ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONPATH=/app/src
