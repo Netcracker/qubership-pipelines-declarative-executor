@@ -19,7 +19,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Build and Publish Docker image
-      uses: netcracker/qubership-workflow-hub/actions/docker-action@b575bad3a0959c4e883bc34f9d055ff07fde2dbd # v2.0.1
+      uses: netcracker/qubership-workflow-hub/actions/docker-action@b2468074afe9e14270e4d3967376cded733da360 #v2.0.5
       with:
         ref: ${{ github.ref_name }}
         custom-image-name: qubership-pipelines-declarative-executor
