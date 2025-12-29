@@ -1,4 +1,4 @@
-name: Execute Pipeline
+name: Execute Pipeline (with Custom Image)
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ on:
           - INFO
           - WARNING
           - ERROR
-        default: INFO
+        default: DEBUG
       is_dry_run:
         default: false
         required: true
@@ -32,6 +32,10 @@ on:
         default: "sample_retry_param=sample_retry_value"
         type: string
         required: false
+      custom_image:
+        default: "ghcr.io/netcracker/qubership-pipelines-declarative-executor:v2.0.1"
+        type: string
+        required: false
 
 permissions:
   actions: read
@@ -40,7 +44,7 @@ permissions:
 
 jobs:
   execute-pipeline:
-    uses: Netcracker/qubership-pipelines-declarative-executor/.github/workflows/reusable-pipeline.yml@v2.0.1
+    uses: Netcracker/qubership-pipelines-declarative-executor/.github/workflows/reusable-pipeline.yml@main
     with:
       pipeline_data: ${{ inputs.pipeline_data }}
       pipeline_vars: ${{ inputs.pipeline_vars }}
@@ -48,6 +52,7 @@ jobs:
       is_dry_run: ${{ inputs.is_dry_run }}
       retry_run_id: ${{ inputs.retry_run_id }}
       retry_vars: ${{ inputs.retry_vars }}
+      custom_image: ${{ inputs.custom_image }}
     secrets:
       sops_age_recipients: ${{ secrets.SOPS_AGE_RECIPIENTS }}
       sops_age_key: ${{ secrets.SOPS_AGE_KEY }}

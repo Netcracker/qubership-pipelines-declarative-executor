@@ -27,6 +27,10 @@ on:
         default: "sample_retry_param=sample_retry_value"
         type: string
         required: false
+      custom_image:
+        default: "ghcr.io/netcracker/qubership-pipelines-declarative-executor:v2.0.1"
+        type: string
+        required: false
     secrets:
       sops_age_recipients:
         required: false
@@ -54,7 +58,7 @@ jobs:
       PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES: '[{"host":"githubusercontent.com","type":"token","headers":{"Authorization":"token {token}"},"token_env_var":"GITHUB_TOKEN"}]'
       GITHUB_TOKEN: ${{ github.token }}
     container:
-      image: ghcr.io/netcracker/qubership-pipelines-declarative-executor:v2.0.0
+      image: ${{ inputs.custom_image }}
 
     steps:
     - name: Download previous run data to retry
