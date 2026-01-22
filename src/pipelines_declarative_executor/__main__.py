@@ -18,9 +18,7 @@ def cli():
               type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], case_sensitive=False),
               help="Console logging level")
 def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is_dry_run: bool, log_level: str):
-    LoggingUtils.CONSOLE_LOG_LEVEL = getattr(logging, log_level.upper(), logging.INFO)
-    LoggingUtils.configure_root_logger()
-    LoggingUtils.log_env_vars()
+    setup_cli_logging(log_level)
     logging.info(f'command "RUN" with params:\npipeline_data="{pipeline_data}"\npipeline_vars="{pipeline_vars}"'
                  f'\npipeline_dir="{pipeline_dir}"\nis_dry_run="{is_dry_run}"\nlog_level="{log_level}"')
     with (LoggingUtils.time_it(), LoggingUtils.profile_it()):
@@ -34,9 +32,7 @@ def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is
               type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], case_sensitive=False),
               help="Console logging level")
 def __retry_pipeline(pipeline_dir: str, retry_vars: str, log_level: str):
-    LoggingUtils.CONSOLE_LOG_LEVEL = getattr(logging, log_level.upper(), logging.INFO)
-    LoggingUtils.configure_root_logger()
-    LoggingUtils.log_env_vars()
+    setup_cli_logging(log_level)
     logging.info(f'command "RETRY" with params:\npipeline_dir="{pipeline_dir}"\nretry_vars="{retry_vars}"'
                  f'\nlog_level="{log_level}"')
     with (LoggingUtils.time_it(), LoggingUtils.profile_it()):
@@ -48,7 +44,7 @@ def __retry_pipeline(pipeline_dir: str, retry_vars: str, log_level: str):
 @click.option('--target_path', required=True, type=str, help="Path to resulting archive")
 @click.option('--fail_on_missing', required=False, default=False, type=bool, help="Should this command fail if archived path is not present")
 def __archive_pipeline(pipeline_dir: str, target_path: str, fail_on_missing: bool):
-    LoggingUtils.configure_root_logger()
+    setup_cli_logging()
     logging.info(f'command "ARCHIVE" with params:\npipeline_dir="{pipeline_dir}"\ntarget_path="{target_path}"')
     from pipelines_declarative_executor.utils.archive_utils import ArchiveUtils
     ArchiveUtils.archive(pipeline_dir, target_path, fail_on_missing)
@@ -59,10 +55,16 @@ def __archive_pipeline(pipeline_dir: str, target_path: str, fail_on_missing: boo
 @click.option('--target_path', required=True, type=str, help="Path where it will be extracted")
 @click.option('--fail_on_missing', required=False, default=False, type=bool, help="Should this command fail if archived path is not present")
 def __unarchive_pipeline(archive_path: str, target_path: str, fail_on_missing: bool):
-    LoggingUtils.configure_root_logger()
+    setup_cli_logging()
     logging.info(f'command "UNARCHIVE" with params:\narchive_path="{archive_path}"\ntarget_path="{target_path}"')
     from pipelines_declarative_executor.utils.archive_utils import ArchiveUtils
     ArchiveUtils.unarchive(archive_path, target_path, fail_on_missing)
+
+
+def setup_cli_logging(log_level: str = "INFO"):
+    LoggingUtils.CONSOLE_LOG_LEVEL = getattr(logging, log_level.upper(), logging.INFO)
+    LoggingUtils.configure_root_logger()
+    LoggingUtils.log_env_vars()
 
 
 async def create_and_run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is_dry_run: bool):
@@ -116,12 +118,11 @@ async def retry_pipeline(pipeline_dir: str, retry_vars: str):
 if __name__ == '__main__':
     if EnvVar.IS_LOCAL_DEBUG:
         # local_setup()
-        LoggingUtils.configure_root_logger()
-        LoggingUtils.log_env_vars()
+        setup_cli_logging("DEBUG")
         logging.debug("=" * 60)
         logging.warning("RUNNING IN LOCAL DEBUG MODE!")
         with (LoggingUtils.time_it("Total time"), LoggingUtils.profile_it()):
             logging.info("Local Debug run")
-            # asyncio.run(local_full_direct_plus_retry())
+            # asyncio.run(local_main_debug())
     else:
         cli()

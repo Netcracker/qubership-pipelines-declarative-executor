@@ -13,6 +13,8 @@ class JobDataRegistry:
     _PARAMS_SECURE_TEMPLATE = {'kind': 'AtlasModuleParamsSecure', 'apiVersion': 'v1',}
     _CONTEXT_DESCRIPTOR_TEMPLATE = {'kind': 'AtlasModuleContextDescriptor', 'apiVersion': 'v1',}
     _DEFAULT_CONTEXT_PATHS = {
+        'paths.logs':                 'logs',
+        'paths.temp':                 'temp',
         'paths.input.params':         'input_params.yaml',
         'paths.input.params_secure':  'input_params_secure.yaml',
         'paths.input.files':          'input_files',

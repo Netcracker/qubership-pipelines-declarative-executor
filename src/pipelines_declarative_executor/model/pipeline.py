@@ -84,6 +84,7 @@ class PipelineExecution:
     finish_time: datetime = None
     logger: Logger = None
     is_retry: bool = False
+    is_nested: bool = False
     previous_executions: list = field(default_factory=list)
 
     def store_state(self):
@@ -96,7 +97,7 @@ class PipelineExecution:
         CommonUtils.write_json(self.vars, self.state_dir.joinpath(Constants.STATE_VARS_FILE_NAME))
 
         from pipelines_declarative_executor.report.report_collector import ReportCollector
-        CommonUtils.write_json(ReportCollector.prepare_ui_view(self), self.state_dir.joinpath(Constants.UI_VIEW_FILE_NAME))
+        CommonUtils.write_json(ReportCollector.prepare_ui_view(self), self.state_dir.joinpath(Constants.PIPELINE_REPORT_FILE_NAME))
 
     def _exec_state(self) -> dict:
         return {
@@ -104,6 +105,7 @@ class PipelineExecution:
             "exec_dir": self.exec_dir,
             "is_dry_run": self.is_dry_run,
             "is_retry": self.is_retry,
+            "is_nested": self.is_nested,
             "status": self.status,
             "code": self.code,
             "start_time": self.start_time,

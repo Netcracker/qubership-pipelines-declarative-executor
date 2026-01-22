@@ -1,18 +1,16 @@
 {
   "kind": "AtlasPipelineReport",
   "apiVersion": "v2",
-  "execution": {
-    "id": "579184be-140c-4139-8253-4ce958297a96",
-    "name": "Atlas Pipeline",
-    "status": "NOT_STARTED",
-    "code": null,
-    "startedAt": null,
-    "finishedAt": null,
-    "time": "N/A",
-    "url": null,
-    "user": null,
-    "email": null
-  },
+  "id": "579184be-140c-4139-8253-4ce958297a96",
+  "name": "Atlas Pipeline",
+  "status": "NOT_STARTED",
+  "code": null,
+  "startedAt": null,
+  "finishedAt": null,
+  "time": "N/A",
+  "url": null,
+  "user": null,
+  "email": null,
   "config": [
     {
       "name": "PIPELINE_DATA",

@@ -2,17 +2,18 @@
 
 ### General Params
 
-| Name                                                     |          Default Value          | Comment                                                                                              |
-|----------------------------------------------------------|:-------------------------------:|------------------------------------------------------------------------------------------------------|
-| PIPELINES_DECLARATIVE_EXECUTOR_MAX_CONCURRENT_STAGES     | {Number of available CPU cores} | Limits how many parallel stages will be processed at once                                            |
-| PIPELINES_DECLARATIVE_EXECUTOR_GLOBAL_CONFIGS_PREFIX     |      CUSTOM_GLOBAL_CONFIG       | Env Vars with this prefix will be treated as AtlasConfigs                                            |
-| PIPELINES_DECLARATIVE_EXECUTOR_SHELL_PROCESS_TIMEOUT     |               30                | Timeout in seconds for invoked shell subprocesses                                                    |
-| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_FULL_EXECUTION_LOG |              True               | Enables full process debug-logging in workdir                                                        |
-| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_PROFILER_STATS     |              False              | Enables profiler stats (dumped to log at the end of execution) (also logs stage execution timing)    |
-| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_MODULE_STDOUT_LOG  |              False              | Enables logging of invoked shell commands stdout (including "Python Modules")                        |
-| PIPELINES_DECLARATIVE_EXECUTOR_PYTHON_MODULE_PATH        |              None               | Path to .PYZ or unzipped folder with "Python Module" Commands (automatically set in Docker image)    |
-| PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES_FILE_PATH      |              None               | Path to file with JSON string with Auth Rules config (will be checked here first)                    |
-| PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES                |              None               | JSON string with Auth Rules config (sample is in [config examples](./config_examples.md#auth_rules)) |
+| Name                                                       |          Default Value          | Comment                                                                                              |
+|------------------------------------------------------------|:-------------------------------:|------------------------------------------------------------------------------------------------------|
+| PIPELINES_DECLARATIVE_EXECUTOR_MAX_CONCURRENT_STAGES       | {Number of available CPU cores} | Limits how many parallel stages will be processed at once                                            |
+| PIPELINES_DECLARATIVE_EXECUTOR_GLOBAL_CONFIGS_PREFIX       |      CUSTOM_GLOBAL_CONFIG       | Env Vars with this prefix will be treated as AtlasConfigs                                            |
+| PIPELINES_DECLARATIVE_EXECUTOR_SHELL_PROCESS_TIMEOUT       |               30                | Timeout in seconds for invoked shell subprocesses                                                    |
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_FULL_EXECUTION_LOG   |              True               | Enables full process debug-logging in workdir                                                        |
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_PROFILER_STATS       |              False              | Enables profiler stats (dumped to log at the end of execution) (also logs stage execution timing)    |
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_MODULE_STDOUT_LOG    |              True               | Enables logging of invoked shell commands stdout (including "Python Modules")                        |
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_DEBUG_DATA_COLLECTOR |              True               | Enables debug data collection after pipeline execution (available in 'x_debug' directory)            |
+| PIPELINES_DECLARATIVE_EXECUTOR_PYTHON_MODULE_PATH          |              None               | Path to .PYZ or unzipped folder with "Python Module" Commands (automatically set in Docker image)    |
+| PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES_FILE_PATH        |              None               | Path to file with JSON string with Auth Rules config (will be checked here first)                    |
+| PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES                  |              None               | JSON string with Auth Rules config (sample is in [config examples](./config_examples.md#auth_rules)) |
 
 ### SOPS Encryption Params
 

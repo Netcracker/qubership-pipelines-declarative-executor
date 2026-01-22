@@ -1,0 +1,78 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-complex
+  name: Complex Parallel Pipeline with ATLAS_PIPELINE_TRIGGER (aka NESTED_PIPELINE)
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    STAGE_TYPE_NESTED: ATLAS_PIPELINE_TRIGGER
+    TEST_TOKEN: qwerty123
+
+  stages:
+    - name: Spam Before Parallel
+      job: template-py-stage
+      input:
+        params:
+          params:
+            sleep_time: 0
+
+    - name: parallel parent
+      parallel:
+      - name: Spam Inside Parallel 1
+        job: template-py-stage
+
+      - name: Spam Inside Parallel 2
+        job: template-py-stage
+
+      - name: Spam Inside Parallel 3
+        job: template-py-stage
+
+    - name: Spam After Parallel
+      job: template-py-stage
+      input:
+        params:
+          params:
+            sleep_time: 0
+
+    - name: Trigger Another Pipeline Lv.2
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        pipeline_data: |
+          ${PIPELINE_DATA_DIR}/pipeline_linear.yaml
+        pipeline_vars: |
+          OVER_PARAM_1 = 123
+          OVER_PARAM_2 = 4124
+          PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+        is_dry_run: false
+      output:
+        params:
+          params: "*"
+        files:
+          EVERYTHING_FROM_NESTED: "*"
+
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            param_count: 3
+            sleep_time: 0.5
+            sleep_period: 0.1
+            random_sleep: true
+            print_all_level_logs: true
+        params_secure:
+          systems:
+            qubership:
+              token: ${TEST_TOKEN}
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_0"
+
+  configuration:
+    output:
+      params:
+        RESULT_SPAM: ${RESULT_SPAM}

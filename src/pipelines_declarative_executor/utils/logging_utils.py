@@ -67,7 +67,7 @@ class LoggingUtils:
         root_logger.addHandler(console_handler)
 
         if EnvVar.ENABLE_FULL_EXECUTION_LOG:
-            file_handler = logging.FileHandler(LoggingUtils.FULL_EXECUTION_LOG_NAME)
+            file_handler = logging.FileHandler(LoggingUtils.FULL_EXECUTION_LOG_NAME, encoding="utf-8")
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(logging.Formatter(LoggingUtils.DEFAULT_FORMAT))
             root_logger.addHandler(file_handler)
@@ -79,12 +79,16 @@ class LoggingUtils:
         logger = logging.getLogger(f"pipelines_declarative_executor_{exec_dir.as_posix()}")
         logger.setLevel(logging.DEBUG)
 
-        file_handler = logging.FileHandler(exec_dir.joinpath(LoggingUtils.EXECUTION_LOG_NAME))
+        file_handler = logging.FileHandler(exec_dir.joinpath(LoggingUtils.EXECUTION_LOG_NAME), encoding="utf-8")
         file_handler.setLevel(LoggingUtils.FILE_LOG_LEVEL)
         file_handler.setFormatter(logging.Formatter(LoggingUtils.DEFAULT_FORMAT))
         logger.addHandler(file_handler)
 
         return logger
+
+    @staticmethod
+    def get_log_level_name():
+        return logging.getLevelName(LoggingUtils.CONSOLE_LOG_LEVEL)
 
     @staticmethod
     def log_env_vars():

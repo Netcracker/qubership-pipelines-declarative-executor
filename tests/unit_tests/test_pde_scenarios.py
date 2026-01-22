@@ -94,11 +94,11 @@ class TestPipelinesDeclarativeExecutor(ExecutorTestCase):
                                     f"--pipeline_dir={self.exec_dir}"])
         self.assertEqual(output.returncode, 0)
 
-        with open(f'{self.exec_dir}/pipeline_state/pipeline_ui_view.json', 'r', encoding='utf-8') as report_json_file:
+        with open(f'{self.exec_dir}/pipeline_state/pipeline_report.json', 'r', encoding='utf-8') as report_json_file:
             report = json.load(report_json_file)
         self.assertEqual(report["stages"][2]["moduleReport"]["kind"], "AtlasModuleReport")
         report_stage_path = Path(report["stages"][3]["execDir"])
-        self.assertTrue(report_stage_path.joinpath("input_files").joinpath("execution_report.json").exists())
+        self.assertTrue(report_stage_path.joinpath("input_files").joinpath("pipeline_report.json").exists())
         self.assertTrue(Path(f'{self.exec_dir}/pipeline_output/output_files/report.html').exists())
 
     @with_exec_dir

@@ -28,7 +28,7 @@ on:
         type: string
         required: false
       custom_image:
-        default: "ghcr.io/netcracker/qubership-pipelines-declarative-executor:v2.0.1"
+        default: "ghcr.io/netcracker/qubership-pipelines-declarative-executor:v2.0.2"
         type: string
         required: false
     secrets:
@@ -111,7 +111,7 @@ jobs:
       if: always()
       with:
         name: PIPELINE_REPORT
-        path: ${{ env.DEFAULT_PIPELINE_DIR }}/pipeline_state/pipeline_ui_view.json
+        path: ${{ env.DEFAULT_PIPELINE_DIR }}/pipeline_state/pipeline_report.json
 
     - name: Upload FULL EXECUTION LOG
       uses: actions/upload-artifact@v4
@@ -119,3 +119,10 @@ jobs:
       with:
         name: full_execution.log
         path: full_execution.log
+
+    - name: Upload DEBUG DATA
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: X_DEBUG
+        path: ${{ env.DEFAULT_PIPELINE_DIR }}/x_debug

@@ -86,13 +86,15 @@ run:
       echo "📦 Archiving execution results..."
       python -m pipelines_declarative_executor archive --pipeline_dir="./${DEFAULT_PIPELINE_DIR}" --target_path="${DEFAULT_PIPELINE_DIR_ZIP}"
     - mv ${DEFAULT_PIPELINE_DIR}/pipeline_output ./pipeline_output
-    - mv ${DEFAULT_PIPELINE_DIR}/pipeline_state/pipeline_ui_view.json ./pipeline_ui_view.json
+    - mv ${DEFAULT_PIPELINE_DIR}/pipeline_state/pipeline_report.json ./pipeline_report.json
+    - mv ${DEFAULT_PIPELINE_DIR}/x_debug ./x_debug
   artifacts:
     name: "execution_results"
     paths:
       - ${DEFAULT_PIPELINE_DIR_ZIP}
       - pipeline_output
-      - pipeline_ui_view.json
+      - x_debug
+      - pipeline_report.json
       - full_execution.log
     when: always
     expire_in: 1 week

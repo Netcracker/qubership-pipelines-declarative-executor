@@ -263,7 +263,7 @@ PIPELINE_DIR (temp-generated, or the one you passed in args)
 ├── pipeline_state
 │   ├── execution.json
 │   ├── pipeline.json
-│   ├── pipeline_ui_view.json
+│   ├── pipeline_report.json
 │   └── vars.json
 └── execution.log
 ...
@@ -275,11 +275,11 @@ Each "Python Module" stage gets its own directory, where its `context.yaml` and 
 `pipeline_output` folder contains data requested in [Pipeline Output configuration](#pipeline-output). This folder is present even if no output is configured.
 
 `pipeline_state` stores current pipeline serialized state inside (among different files, depending on pipeline structure).
-It also contains `pipeline_ui_view.json` - aggregated report, intended to be viewed in UI, with all secure values masked. It's sent via [reporting module](../README.md#reporting).
+It also contains `pipeline_report.json` - aggregated report, intended to be viewed in UI, with all secure values masked. It's sent via [reporting module](../README.md#reporting).
 
 When pipeline is executed inside general CI engines, common approach is producing following artifacts:
 
 - `PIPELINE_OUTPUT` directory - to be processed by other pipelines or manually, secure_params here are encrypted by SOPS
 - `PIPELINE_DIR` - whole "PIPELINE_DIR", but archived and protected with SOPS-based password, intended to be used in retry-case, or for debugging
-- `report.json` - from "pipeline_state/pipeline_ui_view.json"
+- `pipeline_report.json` - from "pipeline_state/pipeline_report.json"
 - `full_execution.log` - complete execution log file, including orchestration process.
