@@ -37,8 +37,8 @@ class ContextFilesProcessor:
 
         if stage.type == StageType.REPORT:
             shutil.copyfile(
-                execution.state_dir.joinpath(Constants.UI_VIEW_FILE_NAME),
-                stage.exec_dir.joinpath(Constants.STAGE_INPUT_FILES_DIR_NAME).joinpath(Constants.STAGE_REPORT_JSON_FILE_NAME)
+                execution.state_dir.joinpath(Constants.PIPELINE_REPORT_FILE_NAME),
+                stage.exec_dir.joinpath(Constants.STAGE_INPUT_FILES_DIR_NAME).joinpath(Constants.PIPELINE_REPORT_FOR_REPORT_STAGE_FILE_NAME)
             )
 
     @staticmethod
@@ -85,7 +85,7 @@ class ContextFilesProcessor:
                 if (val_secure := output_params_secure.get(var_path)) is not None:
                     params_secure[var_name] = val_secure
             else:
-                execution.logger.error(f"Unsupported mapping for output params: {var_name} -> {var_path}")
+                execution.logger.error(f"Unsupported mapping for output params: {var_name} -> {var_path} (for stage {stage.logged_name()})")
         ParamsProcessor.set_stage_output_vars(execution.vars, params, params_secure, stage.id, stage.uuid)
 
         # STORING FILE PATHS

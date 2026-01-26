@@ -1,0 +1,44 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-linear
+  name: Simple Linear Pipeline
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    TEST_TOKEN: qwerty123
+
+  stages:
+    - name: Spam Cmd 1
+      job: template-py-stage
+
+    - name: Spam Cmd 2
+      job: template-py-stage
+
+    - name: Spam Cmd 3
+      job: template-py-stage
+
+  jobs:
+    template-py-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            param_count: 3
+            sleep_time: 0.25
+            sleep_period: 0.05
+            random_sleep: true
+            print_all_level_logs: true
+        params_secure:
+          systems:
+            qubership:
+              token: ${TEST_TOKEN}
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_0"
+
+  configuration:
+    output:
+      params:
+        RESULT_SPAM: ${RESULT_SPAM}

@@ -22,7 +22,7 @@ class ReportCollector:
         ui_view = {
             "kind": "AtlasPipelineReport",
             "apiVersion": "v2",
-            "execution": ReportCollector._prepare_execution(execution),
+            **ReportCollector._prepare_execution(execution),
             "config": ReportCollector._prepare_config(execution),
             "stages": [],
         }
@@ -96,7 +96,7 @@ class ReportCollector:
     @staticmethod
     def _extract_ui_view(stage: Stage):
         if stage.exec_dir:
-            nested_ui_view_path = stage.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME).joinpath(Constants.UI_VIEW_FILE_NAME)
+            nested_ui_view_path = stage.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME).joinpath(Constants.PIPELINE_REPORT_FILE_NAME)
             if nested_ui_view_path.exists():
                 return CommonUtils.load_json_file(nested_ui_view_path)
         return {}

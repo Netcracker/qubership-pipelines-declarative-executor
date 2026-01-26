@@ -43,11 +43,13 @@ class StageProcessor:
                 ContextFilesProcessor.prepare_stage_folder(execution, stage, parent_stage)
 
             if stage.type in [StageType.PYTHON_MODULE, StageType.REPORT]:
-                command = f"python {stage.path} {stage.command} --context_path={stage.exec_dir.joinpath('context.yaml')}"
+                command = (f"python {stage.path} {stage.command} "
+                           f"--context_path={stage.exec_dir.joinpath('context.yaml')} "
+                           f"--log-level={LoggingUtils.get_log_level_name()}")
                 with LoggingUtils.Timer() as shell_timer:
-                    await StageProcessor._run_shell_command(execution, command, logged_cmd_name=f"{stage.path} {stage.command}")
+                    await StageProcessor._run_shell_command(stage, execution, command, logged_cmd_name=f"{stage.path} {stage.command}")
             elif stage.type == StageType.SHELL_COMMAND:
-                await StageProcessor._run_shell_command(execution, stage.command, logged_cmd_name=stage.command)
+                await StageProcessor._run_shell_command(stage, execution, stage.command, logged_cmd_name=stage.command)
             elif stage.type == StageType.PARALLEL_BLOCK:
                 await StageProcessor._run_parallel_block(execution, stage)
             elif stage.type == StageType.ATLAS_PIPELINE_TRIGGER:
@@ -71,7 +73,8 @@ class StageProcessor:
             if stage.type in [StageType.PYTHON_MODULE, StageType.REPORT] and EnvVar.ENABLE_PROFILER_STATS:
                 if shell_timer and prepare_files_timer and store_results_timer:
                     execution.logger.debug(
-                        f"Total stage time: {(stage.finish_time - stage.start_time).total_seconds() * 1000:.0f} ms, "
+                        f"{stage.logged_name()} - "
+                        f"total stage time: {(stage.finish_time - stage.start_time).total_seconds() * 1000:.0f} ms, "
                         f"CLI execution: {shell_timer.elapsed_time_ms:.0f} ms, "
                         f"prepare files: {prepare_files_timer.elapsed_time_ms:.0f} ms, "
                         f"store results: {store_results_timer.elapsed_time_ms:.0f} ms"
@@ -107,10 +110,10 @@ class StageProcessor:
         execution.store_state()
 
     @staticmethod
-    async def _run_shell_command(execution: PipelineExecution, cmd: str, expected_return_code: int = 0,
+    async def _run_shell_command(stage: Stage, execution: PipelineExecution, cmd: str, expected_return_code: int = 0,
                                  logged_cmd_name: str = "Shell Command"):
         if execution.is_dry_run:
-            execution.logger.debug(f'[{logged_cmd_name}] skipped in DRY RUN')
+            execution.logger.debug(f'{stage.logged_name()} - [{logged_cmd_name}] skipped in DRY RUN')
             return
         process = None
         timeout = EnvVar.SHELL_PROCESS_TIMEOUT
@@ -124,21 +127,23 @@ class StageProcessor:
                     process.kill() # instead of terminate
                 raise Exception(f"Shell command timed out after {timeout} seconds")
         except asyncio.CancelledError:
-            execution.logger.warning("Shell Execution cancelled!")
+            execution.logger.warning(f"Shell Execution cancelled! (stage {stage.logged_name()})")
             if process:
                 process.terminate()
             raise
-        execution.logger.debug(f'[{logged_cmd_name}] finished with return_code={process.returncode}')
+        execution.logger.debug(f'{stage.logged_name()} - [{logged_cmd_name}] finished with return_code={process.returncode}')
         if stdout and EnvVar.ENABLE_MODULE_STDOUT_LOG:
-            execution.logger.debug(f'Shell STDOUT:\n{stdout.decode(errors="ignore").strip()}')
+            normalized_output = StringUtils.normalize_line_endings(stdout.decode(errors="ignore").strip())
+            execution.logger.info(f'Shell STDOUT for {stage.logged_name()}:\n{normalized_output}')
         if stderr or process.returncode != expected_return_code:
             if stderr:
-                execution.logger.error(f'Shell STDERR:\n{stderr.decode(errors="ignore").strip()}')
-            raise Exception(f"Error during \"{logged_cmd_name}\"")
+                normalized_output = StringUtils.normalize_line_endings(stderr.decode(errors="ignore").strip())
+                execution.logger.error(f'Shell STDERR for {stage.logged_name()}:\n{normalized_output}')
+            raise Exception(f"Error during {stage.logged_name()} - \"{logged_cmd_name}\"")
 
     @staticmethod
     async def _run_parallel_block(execution: PipelineExecution, parent_stage: Stage):
-        execution.logger.info(f'Processing parallel block with multiple ({len(parent_stage.nested_parallel_stages)}) stages...')
+        execution.logger.info(f'Processing parallel block with multiple ({len(parent_stage.nested_parallel_stages)}) stages... (stage {parent_stage.logged_name()})')
         try:
             semaphore = asyncio.Semaphore(EnvVar.MAX_CONCURRENT_STAGES)
             async def process_with_semaphore(stage):
@@ -149,13 +154,13 @@ class StageProcessor:
             await asyncio.gather(*tasks, return_exceptions=True)
             parent_stage.status = CommonUtils.calculate_final_status(parent_stage.nested_parallel_stages)
         except asyncio.CancelledError:
-            execution.logger.warning("Parallel block execution cancelled!")
+            execution.logger.warning(f"Parallel block execution cancelled! (stage {parent_stage.logged_name()})")
             raise
 
     @staticmethod
     async def _run_nested_pipeline(execution: PipelineExecution, stage: Stage):
         try:
-            execution.logger.info('Processing nested pipeline...')
+            execution.logger.info(f'Processing nested pipeline... (stage {stage.logged_name()})')
             input_calculated = CommonUtils.calculate_dict_values(execution, stage.input)
 
             if execution.is_retry and getattr(stage, StageProcessor.RETRY_NESTED_FLAG, False):
@@ -184,6 +189,7 @@ class StageProcessor:
                 execution_folder_path=stage.exec_dir,
                 is_dry_run=execution.is_dry_run or StringUtils.to_bool(input_calculated.get('is_dry_run')),
                 wait_for_finish=True,
+                is_nested=True,
             )
             ContextFilesProcessor.store_stage_results(execution, stage, stage.exec_dir.joinpath(Constants.PIPELINE_OUTPUT_DIR_NAME))
             stage.status = nested_execution.status

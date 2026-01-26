@@ -8,7 +8,9 @@ from pipelines_declarative_executor.executor.stage_processor import StageProcess
 from pipelines_declarative_executor.model.stage import ExecutionStatus
 from pipelines_declarative_executor.model.exceptions import StageExecutionException
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
+from pipelines_declarative_executor.report.report_summary_table import ReportSummaryTable
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
+from pipelines_declarative_executor.utils.debug_data_collector import DebugDataCollector
 from pipelines_declarative_executor.utils.logging_utils import LoggingUtils
 
 
@@ -17,7 +19,8 @@ class PipelineExecutor:
     async def start(execution: PipelineExecution,
                     execution_folder_path: str | Path,
                     is_dry_run: bool = False,
-                    wait_for_finish: bool = False) -> PipelineExecution:
+                    wait_for_finish: bool = False,
+                    is_nested: bool = False) -> PipelineExecution:
         if not execution.is_retry:
             if not execution_folder_path:
                 execution.exec_dir = Path(tempfile.mkdtemp())
@@ -27,6 +30,7 @@ class PipelineExecutor:
         execution.logger = LoggingUtils.configure_logger(execution.exec_dir)
         execution.logger.info(f"Execution directory: {execution.exec_dir.absolute().as_posix()}")
         execution.exec_process = asyncio.create_task(PipelineExecutor._process(execution))
+        execution.is_nested = is_nested
         if wait_for_finish:
             await execution.exec_process
         return execution
@@ -65,4 +69,7 @@ class PipelineExecutor:
         execution.finish_time = datetime.now()
         execution.store_state()
         execution.logger.info(f"Pipeline {execution.pipeline.logged_name()} execution finished - {execution.status}")
+        if not execution.is_nested:
+            execution.logger.info(f"\n{ReportSummaryTable.generate_summary_table(execution=execution)}")
+            DebugDataCollector.collect_debug_data(execution=execution)
         execution.logger.handlers.clear() # clean up Logger

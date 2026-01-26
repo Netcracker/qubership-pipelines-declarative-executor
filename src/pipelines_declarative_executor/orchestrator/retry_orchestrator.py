@@ -192,7 +192,7 @@ class PipelineRetryOrchestrator:
         # But during Retry here we are processing our tree downwards;
         pipeline_execution = PipelineRetryOrchestrator.load_pipeline_state_from_dir(stage.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME))
         ui_view = ReportCollector.prepare_ui_view(pipeline_execution)
-        CommonUtils.write_json(ui_view, pipeline_execution.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME).joinpath(Constants.UI_VIEW_FILE_NAME))
+        CommonUtils.write_json(ui_view, pipeline_execution.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME).joinpath(Constants.PIPELINE_REPORT_FILE_NAME))
 
     @staticmethod
     def _update_parallel_stage(stage: Stage, found_failed: bool) -> bool:
