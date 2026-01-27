@@ -72,7 +72,7 @@ function formatDate(dateString) {
 }
 
 function displayExecutionData(uiViewData) {
-    const executionData = uiViewData.execution;
+    const executionData = uiViewData;
     const container = document.getElementById('execution-data');
     container.classList.remove('loading');
     container.innerHTML = `
@@ -89,42 +89,20 @@ function displayExecutionData(uiViewData) {
                 <div class="info-value">
                     <span class="status status-${executionData.status}">${executionData.status}</span>
                 </div>
-
-                <div class="info-label">Dry Run:</div>
-                <div class="info-value">${executionData.is_dry_run ? 'Yes' : 'No'}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">Start Time:</div>
-                <div class="info-value">${formatDate(executionData.start_time)}</div>
+                <div class="info-value">${formatDate(executionData.startedAt)}</div>
 
                 <div class="info-label">Finish Time:</div>
-                <div class="info-value">${formatDate(executionData.finish_time)}</div>
+                <div class="info-value">${formatDate(executionData.finishedAt)}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">Duration:</div>
-                <div class="info-value">${executionData.duration || 'N/A'}</div>
-
-                <div class="info-label">Execution Dir:</div>
-                <div class="info-value">${executionData.exec_dir || 'N/A'}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">Inputs:</div>
-                <div class="info-value">${formatInputs(executionData.inputs)}</div>
+                <div class="info-value">${executionData.time || 'N/A'}</div>
             </div>
         </div>
     `;
-}
-
-function calculateDuration(startTime, endTime) {
-    if (!startTime || !endTime) return 'N/A';
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const seconds = Math.round((end - start) / 1000);
-
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}m ${remainingSeconds}s`;
 }
 
 async function renderPipelineVisualization(uiViewData) {
@@ -186,10 +164,10 @@ async function createStageBlock(stage) {
     name.textContent = stage.name;
     block.appendChild(name);
 
-    if (stage.start_time) {
+    if (stage.time) {
         const duration = document.createElement('div');
         duration.className = 'stage-duration';
-        duration.textContent = calculateDuration(stage.start_time, stage.finish_time);
+        duration.textContent = `${stage.time}`;
         block.appendChild(duration);
     }
 
