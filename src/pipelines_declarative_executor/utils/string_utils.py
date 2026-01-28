@@ -5,6 +5,7 @@ import os, logging, re, dataclasses, requests
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse, quote
+from pipelines_declarative_executor.utils.constants import Constants
 
 
 class StringUtils:
@@ -128,3 +129,9 @@ class StringUtils:
         text = text.replace('\r\n', '\n')
         text = text.replace('\r', '\n')
         return text
+
+    @staticmethod
+    def mask_value(key = None, value = None) -> str:
+        if value is None or value == '':
+            return ""
+        return Constants.DEFAULT_MASKED_VALUE

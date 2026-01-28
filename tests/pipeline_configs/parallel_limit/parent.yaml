@@ -1,0 +1,84 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: parent-pipeline
+  name: Parent Pipeline that will start multiple nested pipelines in parallel
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    STAGE_TYPE_NESTED: ATLAS_PIPELINE_TRIGGER
+    PIPELINE_DATA_DIR: https://raw.githubusercontent.com/Netcracker/qubership-pipelines-declarative-executor/refs/heads/rnd/resource_limits/tests/pipeline_configs/parallel_limit
+
+  stages:
+    - name: Spam Before Parallel
+      job: template-spam-stage
+      input:
+        params:
+          params:
+            sleep_time: 0
+
+    - name: Parallel Block in Top-Level Parent
+      parallel:
+      - name: Trigger Child Pipeline 1
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          pipeline_data: ${PIPELINE_DATA_DIR}/child.yaml
+        output:
+          params:
+            params: "*"
+
+      - name: Trigger Child Pipeline 2
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          pipeline_data: ${PIPELINE_DATA_DIR}/child.yaml
+        output:
+          params:
+            params: "*"
+
+      - name: Trigger Child Pipeline 3
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          pipeline_data: ${PIPELINE_DATA_DIR}/child.yaml
+        output:
+          params:
+            params: "*"
+
+      - name: Trigger Child Pipeline 4
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          pipeline_data: ${PIPELINE_DATA_DIR}/child.yaml
+        output:
+          params:
+            params: "*"
+
+    - name: Spam After Parallel
+      job: template-spam-stage
+      input:
+        params:
+          params:
+            sleep_time: 0
+
+  jobs:
+    template-spam-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            param_count: 3
+            sleep_time: 0.5
+            sleep_period: 0.1
+            random_sleep: false
+            print_all_level_logs: false
+        params_secure:
+          systems:
+            qubership:
+              token: ${TEST_TOKEN}
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_0"
+
+  configuration:
+    output:
+      params:
+        RESULT_SPAM: ${RESULT_SPAM}

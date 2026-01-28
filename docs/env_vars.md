@@ -4,7 +4,6 @@
 
 | Name                                                       |          Default Value          | Comment                                                                                              |
 |------------------------------------------------------------|:-------------------------------:|------------------------------------------------------------------------------------------------------|
-| PIPELINES_DECLARATIVE_EXECUTOR_MAX_CONCURRENT_STAGES       | {Number of available CPU cores} | Limits how many parallel stages will be processed at once                                            |
 | PIPELINES_DECLARATIVE_EXECUTOR_GLOBAL_CONFIGS_PREFIX       |      CUSTOM_GLOBAL_CONFIG       | Env Vars with this prefix will be treated as AtlasConfigs                                            |
 | PIPELINES_DECLARATIVE_EXECUTOR_SHELL_PROCESS_TIMEOUT       |               30                | Timeout in seconds for invoked shell subprocesses                                                    |
 | PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_FULL_EXECUTION_LOG   |              True               | Enables full process debug-logging in workdir                                                        |
@@ -14,6 +13,15 @@
 | PIPELINES_DECLARATIVE_EXECUTOR_PYTHON_MODULE_PATH          |              None               | Path to .PYZ or unzipped folder with "Python Module" Commands (automatically set in Docker image)    |
 | PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES_FILE_PATH        |              None               | Path to file with JSON string with Auth Rules config (will be checked here first)                    |
 | PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES                  |              None               | JSON string with Auth Rules config (sample is in [config examples](./config_examples.md#auth_rules)) |
+
+### Resource Manager Params
+
+| Name                                                          |          Default Value          | Comment                                                                                                        |
+|---------------------------------------------------------------|:-------------------------------:|----------------------------------------------------------------------------------------------------------------|
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_RESOURCE_MANAGER        |              True               | Enables "Resource Manager" which limits running subprocesses in parallel                                       |
+| PIPELINES_DECLARATIVE_EXECUTOR_MAX_CONCURRENT_STAGES          | {Number of available CPU cores} | Limits how many subprocesses with "Python Modules" might be processes concurrently                             |
+| PIPELINES_DECLARATIVE_EXECUTOR_REQUIRED_MEMORY_PER_SUBPROCESS |               100               | Average memory footprint of invoked CLIs in megabytes, used to limit invocations when not having enough memory |
+| PIPELINES_DECLARATIVE_EXECUTOR_RESOURCE_MANAGER_QUEUE_TIMEOUT |               360               | Timeout in seconds for "Python Module" stages to wait for resources acquisition                                |
 
 ### SOPS Encryption Params
 

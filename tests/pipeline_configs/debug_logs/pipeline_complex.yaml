@@ -11,7 +11,7 @@ pipeline:
 
   stages:
     - name: Spam Before Parallel
-      job: template-py-stage
+      job: template-spam-stage
       input:
         params:
           params:
@@ -20,16 +20,16 @@ pipeline:
     - name: parallel parent
       parallel:
       - name: Spam Inside Parallel 1
-        job: template-py-stage
+        job: template-spam-stage
 
       - name: Spam Inside Parallel 2
-        job: template-py-stage
+        job: template-spam-stage
 
       - name: Spam Inside Parallel 3
-        job: template-py-stage
+        job: template-spam-stage
 
     - name: Spam After Parallel
-      job: template-py-stage
+      job: template-spam-stage
       input:
         params:
           params:
@@ -51,9 +51,14 @@ pipeline:
         files:
           EVERYTHING_FROM_NESTED: "*"
 
+#    - name: System Load Test
+#      job: template-system-load-test
+
+#    - name: Run GitHub Pipeline
+#      job: template-github-run-pipeline
 
   jobs:
-    template-py-stage:
+    template-spam-stage:
       type: ${STAGE_TYPE_PY}
       command: "spam"
       input:
@@ -71,6 +76,36 @@ pipeline:
       output:
         params:
           RESULT_SPAM: "params.some_insecure_param_0"
+
+    template-system-load-test:
+      type: ${STAGE_TYPE_PY}
+      command: "system-load-test"
+      input:
+        params:
+          params:
+            cpu:
+              run_test: true
+              load: 1
+              duration: 2
+            ram:
+              run_test: true
+              size_mb: 100
+              duration: 2
+              chunks: 2
+
+    template-github-run-pipeline:
+      type: ${STAGE_TYPE_PY}
+      command: "github-run-pipeline"
+      input:
+        params:
+          params:
+            pipeline_owner: LightlessOne
+            pipeline_repo_name: test-workflow
+            pipeline_workflow_file_name: test.yaml
+        params_secure:
+          systems:
+            github:
+              password: ${GH_TOKEN}
 
   configuration:
     output:

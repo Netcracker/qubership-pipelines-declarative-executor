@@ -1,5 +1,6 @@
 from tabulate import tabulate
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
+from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 
 
 class ReportSummaryTable:
@@ -49,6 +50,8 @@ class ReportSummaryTable:
                 'type': ReportSummaryTable._get_or_default(stage, 'type'),
                 'command': stage.get('command', ""),
                 'level': level,
+                'peakMem': stage.get('customData', {}).get('peak_memory_mb'),
+                'avgCpu': stage.get('customData', {}).get('avg_cpu'),
             })
 
             if parallel_stages := stage.get('parallelStages', []):
@@ -70,6 +73,11 @@ class ReportSummaryTable:
                 row['type'],
                 row['command'],
             ])
+
+        if EnvVar.ENABLE_PROFILER_STATS:
+            headers.extend(["Peak Mem", "Avg Cpu"])
+            for i, row in enumerate(rows):
+                table_data[i].extend([row['peakMem'], row['avgCpu']])
 
         lines = []
         lines.append("=" * ReportSummaryTable.TABLE_BORDER_LINE_WIDTH)

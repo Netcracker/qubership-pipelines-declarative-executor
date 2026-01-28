@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import io, sys, logging, time
+import sys, logging
 
-from contextlib import contextmanager
 from logging import Logger
 from pathlib import Path
-from pstats import SortKey
 
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 
@@ -16,45 +14,6 @@ class LoggingUtils:
     EXECUTION_LOG_NAME = "execution.log"
     FULL_EXECUTION_LOG_NAME = "full_execution.log"
     DEFAULT_FORMAT = u'[%(asctime)s] [%(levelname)-5s] [class=%(filename)s:%(lineno)-3s] %(message)s'
-
-    class Timer:
-        def __enter__(self):
-            self.start_time = time.perf_counter()
-            return self
-
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            self.elapsed_time_ms = (time.perf_counter() - self.start_time) * 1_000
-
-    @staticmethod
-    @contextmanager
-    def time_it(message: str = ''):
-        message = f"{message} - " if message else ''
-        start = time.perf_counter()
-        try:
-            yield
-        finally:
-            end = time.perf_counter()
-            elapsed = end - start
-            logging.info(f"{message}Executed in {elapsed:.6f} seconds")
-
-    @staticmethod
-    @contextmanager
-    def profile_it():
-        if not EnvVar.ENABLE_PROFILER_STATS:
-            yield
-            return
-        import cProfile, pstats
-        profiler = cProfile.Profile()
-        profiler.enable()
-        try:
-            yield
-        finally:
-            profiler.disable()
-            stats_stream = io.StringIO()
-            stats = pstats.Stats(profiler, stream=stats_stream)
-            stats.sort_stats(SortKey.TIME)
-            stats.print_stats(30)
-            logging.info("PROFILING RESULT:\n%s", stats_stream.getvalue())
 
     @staticmethod
     def configure_root_logger() -> Logger:
@@ -93,13 +52,15 @@ class LoggingUtils:
     @staticmethod
     def log_env_vars():
         logged_vars = [
-            "MAX_CONCURRENT_STAGES", "GLOBAL_CONFIGS_PREFIX",
+            "GLOBAL_CONFIGS_PREFIX",
             "ENABLE_FULL_EXECUTION_LOG", "ENABLE_PROFILER_STATS", "ENABLE_MODULE_STDOUT_LOG",
             "REPORT_SEND_MODE", "REPORT_SEND_INTERVAL", "REPORT_STATUS_POLL_INTERVAL",
             "ENCRYPT_OUTPUT_PARAMS", "FAIL_ON_MISSING_SOPS",
             "SHELL_PROCESS_TIMEOUT", "SOPS_PROCESS_TIMEOUT",
+            "ENABLE_RESOURCE_MANAGER", "RESOURCE_MANAGER_QUEUE_TIMEOUT",
+            "MAX_CONCURRENT_STAGES", "REQUIRED_MEMORY_PER_SUBPROCESS",
             "PYTHON_MODULE_PATH", "EXECUTION_URL", "EXECUTION_USER", "EXECUTION_EMAIL",
             "IS_LOCAL_DEBUG",
         ]
         env_info = "\n".join([f"{var_name}: {getattr(EnvVar, var_name)}" for var_name in logged_vars])
-        logging.info(env_info)
+        logging.info("\n" + env_info)

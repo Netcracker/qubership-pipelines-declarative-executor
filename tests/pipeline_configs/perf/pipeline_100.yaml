@@ -1,0 +1,261 @@
+kind: AtlasPipeline
+apiVersion: v2
+pipeline:
+  id: pipeline-3ffc5895
+  name: Generated Pipeline - 2026-01-29 09:59:47.659290
+  stages:
+  - name: Stage template-system-load-ram-test 1
+    job: template-system-load-ram-test
+  - name: Stage template-system-load-cpu-test 2
+    job: template-system-load-cpu-test
+  - name: Stage template-system-load-cpu-test 3
+    job: template-system-load-cpu-test
+  - name: Stage template-system-load-ram-test 4
+    job: template-system-load-ram-test
+  - name: Stage template-system-load-cpu-test 5
+    job: template-system-load-cpu-test
+  - name: Stage template-spam-files 6
+    job: template-spam-files
+  - name: Stage template-system-load-cpu-test 7
+    job: template-system-load-cpu-test
+  - name: Stage template-spam-files 8
+    job: template-spam-files
+  - name: Stage template-system-load-cpu-test 9
+    job: template-system-load-cpu-test
+  - name: Stage template-spam-files 10
+    job: template-spam-files
+  - name: Stage template-spam-files 11
+    job: template-spam-files
+  - name: Stage template-system-load-cpu-test 12
+    job: template-system-load-cpu-test
+  - name: Stage template-system-load-ram-test 13
+    job: template-system-load-ram-test
+  - name: Stage template-system-load-cpu-test 14
+    job: template-system-load-cpu-test
+  - name: Stage template-spam-params 15
+    job: template-spam-params
+  - name: Stage template-system-load-network-test 16
+    job: template-system-load-network-test
+  - name: Stage template-spam-files 17
+    job: template-spam-files
+  - name: Stage template-system-load-ram-test 18
+    job: template-system-load-ram-test
+  - name: Stage template-system-load-network-test 19
+    job: template-system-load-network-test
+  - name: Stage template-spam-params 20
+    job: template-spam-params
+  - name: Stage template-spam-params 21
+    job: template-spam-params
+  - name: Stage template-system-load-cpu-test 22
+    job: template-system-load-cpu-test
+  - name: Stage template-system-load-cpu-test 23
+    job: template-system-load-cpu-test
+  - name: Parallel Block 24
+    parallel:
+    - name: Stage template-spam-files 24
+      job: template-spam-files
+    - name: Stage template-system-load-network-test 25
+      job: template-system-load-network-test
+    - name: Stage template-system-load-network-test 26
+      job: template-system-load-network-test
+    - name: Stage template-spam-params 27
+      job: template-spam-params
+  - name: Stage template-spam-files 29
+    job: template-spam-files
+  - name: Stage template-spam-files 30
+    job: template-spam-files
+  - name: Parallel Block 31
+    parallel:
+    - name: Stage template-system-load-network-test 31
+      job: template-system-load-network-test
+    - name: Stage template-system-load-cpu-test 32
+      job: template-system-load-cpu-test
+    - name: Stage template-system-load-ram-test 33
+      job: template-system-load-ram-test
+    - name: Stage template-system-load-cpu-test 34
+      job: template-system-load-cpu-test
+  - name: Stage template-system-load-ram-test 36
+    job: template-system-load-ram-test
+  - name: Stage template-spam-params 37
+    job: template-spam-params
+  - name: Stage template-spam-files 38
+    job: template-spam-files
+  - name: Stage template-spam-files 39
+    job: template-spam-files
+  - name: Stage template-spam-files 40
+    job: template-spam-files
+  - name: Stage template-system-load-cpu-test 41
+    job: template-system-load-cpu-test
+  - name: Stage template-system-load-network-test 42
+    job: template-system-load-network-test
+  - name: Stage template-spam-params 43
+    job: template-spam-params
+  - name: Stage template-spam-files 44
+    job: template-spam-files
+  - name: Stage template-system-load-cpu-test 45
+    job: template-system-load-cpu-test
+  - name: Stage template-system-load-cpu-test 46
+    job: template-system-load-cpu-test
+  - name: Stage template-system-load-cpu-test 47
+    job: template-system-load-cpu-test
+  - name: Stage template-spam-params 48
+    job: template-spam-params
+  - name: Stage template-spam-files 49
+    job: template-spam-files
+  - name: Stage template-system-load-ram-test 50
+    job: template-system-load-ram-test
+  - name: Stage template-system-load-ram-test 51
+    job: template-system-load-ram-test
+  - name: Stage template-system-load-ram-test 52
+    job: template-system-load-ram-test
+  - name: Stage template-system-load-network-test 53
+    job: template-system-load-network-test
+  - name: Stage template-spam-params 54
+    job: template-spam-params
+  - name: Stage template-system-load-network-test 55
+    job: template-system-load-network-test
+  - name: Stage template-spam-files 56
+    job: template-spam-files
+  - name: Stage template-spam-params 57
+    job: template-spam-params
+  - name: Stage template-spam-params 58
+    job: template-spam-params
+  - name: Parallel Block 59
+    parallel:
+    - name: Stage template-system-load-network-test 59
+      job: template-system-load-network-test
+    - name: Stage template-system-load-network-test 60
+      job: template-system-load-network-test
+    - name: Stage template-system-load-cpu-test 61
+      job: template-system-load-cpu-test
+    - name: Stage template-system-load-ram-test 62
+      job: template-system-load-ram-test
+  - name: Stage template-system-load-ram-test 64
+    job: template-system-load-ram-test
+  - name: Stage template-spam-params 65
+    job: template-spam-params
+  - name: Stage template-system-load-cpu-test 66
+    job: template-system-load-cpu-test
+  - name: Stage template-system-load-network-test 67
+    job: template-system-load-network-test
+  - name: Stage template-system-load-cpu-test 68
+    job: template-system-load-cpu-test
+  - name: Stage template-spam-files 69
+    job: template-spam-files
+  - name: Stage template-spam-params 70
+    job: template-spam-params
+  - name: Stage template-system-load-network-test 71
+    job: template-system-load-network-test
+  - name: Stage template-system-load-cpu-test 72
+    job: template-system-load-cpu-test
+  - name: Stage template-system-load-ram-test 73
+    job: template-system-load-ram-test
+  - name: Stage template-spam-params 74
+    job: template-spam-params
+  - name: Stage template-system-load-cpu-test 75
+    job: template-system-load-cpu-test
+  - name: Stage template-spam-files 76
+    job: template-spam-files
+  - name: Stage template-spam-files 77
+    job: template-spam-files
+  - name: Stage template-spam-files 78
+    job: template-spam-files
+  - name: Stage template-system-load-cpu-test 79
+    job: template-system-load-cpu-test
+  - name: Stage template-system-load-cpu-test 80
+    job: template-system-load-cpu-test
+  - name: Parallel Block 81
+    parallel:
+    - name: Stage template-system-load-ram-test 81
+      job: template-system-load-ram-test
+    - name: Stage template-spam-files 82
+      job: template-spam-files
+    - name: Stage template-system-load-ram-test 83
+      job: template-system-load-ram-test
+    - name: Stage template-spam-params 84
+      job: template-spam-params
+    - name: Stage template-system-load-cpu-test 85
+      job: template-system-load-cpu-test
+    - name: Stage template-system-load-cpu-test 86
+      job: template-system-load-cpu-test
+    - name: Stage template-system-load-cpu-test 87
+      job: template-system-load-cpu-test
+    - name: Stage template-system-load-ram-test 88
+      job: template-system-load-ram-test
+  - name: Stage template-system-load-ram-test 90
+    job: template-system-load-ram-test
+  - name: Stage template-system-load-network-test 91
+    job: template-system-load-network-test
+  - name: Stage template-system-load-ram-test 92
+    job: template-system-load-ram-test
+  - name: Stage template-spam-files 93
+    job: template-spam-files
+  - name: Stage template-system-load-ram-test 94
+    job: template-system-load-ram-test
+  - name: Stage template-spam-params 95
+    job: template-spam-params
+  - name: Stage template-system-load-cpu-test 96
+    job: template-system-load-cpu-test
+  - name: Stage template-system-load-ram-test 97
+    job: template-system-load-ram-test
+  - name: Stage template-system-load-ram-test 98
+    job: template-system-load-ram-test
+  - name: Stage template-spam-files 99
+    job: template-spam-files
+  - name: Stage template-spam-params 100
+    job: template-spam-params
+  jobs:
+    template-spam-params:
+      type: PYTHON_MODULE
+      command: spam
+      input:
+        params:
+          params:
+            param_count: 3
+            sleep_time: 0
+            sleep_period: 0.1
+            random_sleep: false
+            print_all_level_logs: false
+      output:
+        params:
+          RESULT_SPAM: params.some_insecure_param_0
+    template-spam-files:
+      type: PYTHON_MODULE
+      command: spam-files
+      input:
+        params:
+          params:
+            files_count: 3
+    template-system-load-cpu-test:
+      type: PYTHON_MODULE
+      command: system-load-test
+      input:
+        params:
+          params:
+            sleep_between_tests: 0
+            cpu:
+              run_test: true
+              load: 1
+              duration: 1
+    template-system-load-ram-test:
+      type: PYTHON_MODULE
+      command: system-load-test
+      input:
+        params:
+          params:
+            sleep_between_tests: 0
+            ram:
+              run_test: true
+              size_mb: 100
+              duration: 1
+              chunks: 2
+    template-system-load-network-test:
+      type: PYTHON_MODULE
+      command: system-load-test
+      input:
+        params:
+          params:
+            sleep_between_tests: 0
+            network:
+              run_test: true
+              url: https://raw.githubusercontent.com/Netcracker/qubership-pipelines-common-python-library/refs/heads/main/README.md

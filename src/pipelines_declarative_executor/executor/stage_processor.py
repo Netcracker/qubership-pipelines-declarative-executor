@@ -4,6 +4,7 @@ from datetime import datetime
 from pipelines_declarative_executor.executor.condition_processor import ConditionProcessor
 from pipelines_declarative_executor.executor.context_files_processor import ContextFilesProcessor
 from pipelines_declarative_executor.executor.params_processor import ParamsProcessor
+from pipelines_declarative_executor.executor.resource_manager import ResourceManager
 from pipelines_declarative_executor.model.stage import ExecutionStatus, Stage, StageType, COMPLEX_TYPES
 from pipelines_declarative_executor.model.exceptions import StageExecutionException, PipelineExecutorException
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
@@ -13,6 +14,7 @@ from pipelines_declarative_executor.utils.common_utils import CommonUtils
 from pipelines_declarative_executor.utils.constants import Constants
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 from pipelines_declarative_executor.utils.logging_utils import LoggingUtils
+from pipelines_declarative_executor.utils.profiling_utils import ProfilingUtils
 from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 
@@ -39,14 +41,14 @@ class StageProcessor:
 
         try:
             shell_timer, store_results_timer = None, None
-            with LoggingUtils.Timer() as prepare_files_timer:
+            with ProfilingUtils.Timer() as prepare_files_timer:
                 ContextFilesProcessor.prepare_stage_folder(execution, stage, parent_stage)
 
             if stage.type in [StageType.PYTHON_MODULE, StageType.REPORT]:
                 command = (f"python {stage.path} {stage.command} "
                            f"--context_path={stage.exec_dir.joinpath('context.yaml')} "
                            f"--log-level={LoggingUtils.get_log_level_name()}")
-                with LoggingUtils.Timer() as shell_timer:
+                with ProfilingUtils.Timer() as shell_timer:
                     await StageProcessor._run_shell_command(stage, execution, command, logged_cmd_name=f"{stage.path} {stage.command}")
             elif stage.type == StageType.SHELL_COMMAND:
                 await StageProcessor._run_shell_command(stage, execution, stage.command, logged_cmd_name=stage.command)
@@ -59,7 +61,7 @@ class StageProcessor:
 
             if stage.type not in COMPLEX_TYPES:
                 stage.status = ExecutionStatus.SUCCESS
-                with LoggingUtils.Timer() as store_results_timer:
+                with ProfilingUtils.Timer() as store_results_timer:
                     ContextFilesProcessor.store_stage_results(execution, stage)
         except asyncio.CancelledError:
             stage.status = ExecutionStatus.CANCELLED
@@ -115,22 +117,58 @@ class StageProcessor:
         if execution.is_dry_run:
             execution.logger.debug(f'{stage.logged_name()} - [{logged_cmd_name}] skipped in DRY RUN')
             return
-        process = None
-        timeout = EnvVar.SHELL_PROCESS_TIMEOUT
+
+        if not await ResourceManager.acquire():
+            raise Exception(f"Resource acquisition timeout for stage {stage.logged_name()}")
+
+        process, stdout, stderr, monitor_task = None, None, None, None
         try:
-            process = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE,
-                                                            stderr=asyncio.subprocess.PIPE)
+            process = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            if EnvVar.ENABLE_PROFILER_STATS and process.pid:
+                metrics = ProfilingUtils.get_monitoring_metrics()
+                monitor_task = asyncio.create_task(ProfilingUtils.monitor_process(pid=process.pid, metrics=metrics))
             try:
-                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
+                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=EnvVar.SHELL_PROCESS_TIMEOUT)
             except asyncio.TimeoutError:
                 if process:
                     process.kill() # instead of terminate
-                raise Exception(f"Shell command timed out after {timeout} seconds")
+                raise Exception(f"Shell command timed out after {EnvVar.SHELL_PROCESS_TIMEOUT} seconds")
+
         except asyncio.CancelledError:
             execution.logger.warning(f"Shell Execution cancelled! (stage {stage.logged_name()})")
             if process:
                 process.terminate()
             raise
+
+        finally:
+            try:
+                await ResourceManager.release()
+            except Exception as e:
+                execution.logger.error(f"Error releasing resources: [{type(e)} - {str(e)}]")
+            if EnvVar.ENABLE_PROFILER_STATS:
+                await StageProcessor._run_shell_command_finalize(stage, monitor_task, metrics)
+
+        await StageProcessor._run_shell_command_log(stage, execution, process, stdout, stderr, expected_return_code, logged_cmd_name)
+
+
+    @staticmethod
+    async def _run_shell_command_finalize(stage: Stage, monitor_task: asyncio.Task, metrics: dict):
+        if monitor_task and not monitor_task.done():
+            monitor_task.cancel()
+            try:
+                await monitor_task
+            except asyncio.CancelledError:
+                pass
+
+        if metrics['samples'] > 0:
+            metrics['avg_cpu'] = metrics['total_cpu'] / metrics['samples']
+        stage.custom_data.update({
+            "avg_cpu": f"{metrics['avg_cpu']:.2f}%",
+            "peak_memory_mb": f"{metrics['peak_memory_mb']:.2f}Mb"
+        })
+
+    @staticmethod
+    async def _run_shell_command_log(stage: Stage, execution: PipelineExecution, process, stdout, stderr, expected_return_code: int, logged_cmd_name: str):
         execution.logger.debug(f'{stage.logged_name()} - [{logged_cmd_name}] finished with return_code={process.returncode}')
         if stdout and EnvVar.ENABLE_MODULE_STDOUT_LOG:
             normalized_output = StringUtils.normalize_line_endings(stdout.decode(errors="ignore").strip())
@@ -145,12 +183,7 @@ class StageProcessor:
     async def _run_parallel_block(execution: PipelineExecution, parent_stage: Stage):
         execution.logger.info(f'Processing parallel block with multiple ({len(parent_stage.nested_parallel_stages)}) stages... (stage {parent_stage.logged_name()})')
         try:
-            semaphore = asyncio.Semaphore(EnvVar.MAX_CONCURRENT_STAGES)
-            async def process_with_semaphore(stage):
-                async with semaphore:
-                    return await StageProcessor.process(execution, stage, parent_stage)
-
-            tasks = [process_with_semaphore(nested_stage) for nested_stage in parent_stage.nested_parallel_stages]
+            tasks = [StageProcessor.process(execution, nested_stage, parent_stage) for nested_stage in parent_stage.nested_parallel_stages]
             await asyncio.gather(*tasks, return_exceptions=True)
             parent_stage.status = CommonUtils.calculate_final_status(parent_stage.nested_parallel_stages)
         except asyncio.CancelledError:

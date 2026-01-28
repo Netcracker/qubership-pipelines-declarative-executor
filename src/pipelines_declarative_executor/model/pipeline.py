@@ -61,8 +61,10 @@ class PipelineVars:
             for key, value in self._merged_initial_vars.items():
                 is_secure = key in self.secure_vars
                 self._initial_vars_with_sources.append(CommonUtils.var_with_source(
-                    key, Constants.DEFAULT_MASKED_VALUE if is_secure else value,
-                    self.vars_source[key]))
+                    key,
+                    StringUtils.mask_value(key=key, value=value) if is_secure else value,
+                    self.vars_source[key]
+                ))
         return self._initial_vars_with_sources
 
 
