@@ -40,7 +40,7 @@ permissions:
 
 jobs:
   execute-pipeline:
-    uses: Netcracker/qubership-pipelines-declarative-executor/.github/workflows/reusable-pipeline.yml@v2.0.2
+    uses: Netcracker/qubership-pipelines-declarative-executor/.github/workflows/reusable-pipeline.yml@v2.0.3
     with:
       pipeline_data: ${{ inputs.pipeline_data }}
       pipeline_vars: ${{ inputs.pipeline_vars }}

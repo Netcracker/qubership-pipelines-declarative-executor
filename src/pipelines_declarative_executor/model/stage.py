@@ -56,7 +56,8 @@ class Stage:
     start_time: datetime = None
     finish_time: datetime = None
     exec_dir: Path = None
-    evaluated_params: dict = None
+    evaluated_params: dict = field(default_factory=dict)
+    custom_data: dict = field(default_factory=dict)
 
     def logged_name(self) -> str:
         return f"\"{self.name}\" (id={self.id}, uuid={self.uuid})"

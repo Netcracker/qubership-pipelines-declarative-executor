@@ -214,6 +214,7 @@ class PipelineRetryOrchestrator:
         stage.start_time = None
         stage.finish_time = None
         stage.evaluated_params = {}
+        stage.custom_data = {}
         if reset_nested and stage.nested_parallel_stages:
             for nested in stage.nested_parallel_stages:
                 PipelineRetryOrchestrator._reset_stage(nested, reset_nested=True)

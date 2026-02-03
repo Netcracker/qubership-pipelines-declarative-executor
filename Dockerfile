@@ -2,7 +2,7 @@ FROM python:3.11-slim
 LABEL org.opencontainers.image.description="Qubership Pipelines Declarative Executor"
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full curl procps && rm -rf /var/lib/apt/lists/*
 
 # Install SOPS
 RUN curl -LO https://github.com/getsops/sops/releases/download/v3.10.2/sops-v3.10.2.linux.amd64 && \

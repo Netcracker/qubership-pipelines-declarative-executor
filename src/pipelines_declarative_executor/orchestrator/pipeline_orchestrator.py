@@ -101,7 +101,6 @@ class PipelineOrchestrator:
         for field_name in ['input', 'output']:
             if value := merged_stage_data.get(field_name):
                 setattr(stage, field_name, value)
-        stage.evaluated_params = {}
 
         if when := merged_stage_data.get('when'):
             if when_condition := when.get('condition'):

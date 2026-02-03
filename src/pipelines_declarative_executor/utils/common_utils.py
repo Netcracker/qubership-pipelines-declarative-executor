@@ -4,6 +4,7 @@ from __future__ import annotations
 import json, yaml, copy, shutil
 
 from pathlib import Path
+from typing import Any
 from pipelines_declarative_executor.model.stage import ExecutionStatus, Stage
 from pipelines_declarative_executor.utils.constants import StatusCodes
 from pipelines_declarative_executor.x_modules_ops.dict_utils import UtilsDictionary
@@ -37,7 +38,9 @@ class CommonUtils:
             return yaml.safe_load(file)
 
     @staticmethod
-    def traverse(obj: dict | list, path: list = [], traverse_nested_lists: bool = True):
+    def traverse(obj: dict | list, path: list = None, traverse_nested_lists: bool = True):
+        if path is None:
+            path = []
         for k, v in obj.items() if isinstance(obj, dict) else enumerate(obj):
             if isinstance(v, dict) or (traverse_nested_lists and isinstance(v, list)):
                 for kv in CommonUtils.traverse(v, path + [k], traverse_nested_lists):
@@ -98,7 +101,7 @@ class CommonUtils:
                 return StatusCodes.PIPELINE_FINISHED_UNKNOWN
 
     @staticmethod
-    def var_with_source(name: str, value: any, source: dict) -> dict:
+    def var_with_source(name: str, value: Any, source: dict) -> dict:
         return {
             "name": name,
             "value": value,

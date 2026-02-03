@@ -1,5 +1,6 @@
 import copy
 
+from typing import Any
 from pipelines_declarative_executor.executor.params_processor import ParamsProcessor
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
 from pipelines_declarative_executor.model.stage import Stage, StageType, ExecutionStatus
@@ -60,7 +61,7 @@ class ReportCollector:
         if stage_data := ReportCollector.__FINISHED_STAGES.get(stage.uuid):
             return stage_data
 
-        stage_data = {"id": stage.uuid}
+        stage_data: dict[str, Any] = {"id": stage.uuid}
         for field_mapping in ["name", "path", "type", "command", "status", ("start_time", "startedAt"),
                               ("finish_time", "finishedAt"), "time", ("exec_dir", "execDir"), "url"]:
             model_field, report_field = field_mapping if isinstance(field_mapping, tuple) else (field_mapping, field_mapping)
@@ -71,7 +72,7 @@ class ReportCollector:
             stage_data.update(copy.deepcopy(stage.evaluated_params))
             for params_type in ["input", "output"]:
                 if params_secure := stage_data.get(params_type, {}).get("params_secure", {}):
-                    stage_data[params_type]["params_secure"] = ReportCollector._mask_secure_params(params_secure)
+                    stage_data[params_type]["params_secure"] = ReportCollector._mask_secure_params(key="params_secure", data=params_secure)
 
         if stage.type == StageType.PARALLEL_BLOCK:
             stage_data[ReportCollector.PARALLEL_STAGES] = []
@@ -83,15 +84,18 @@ class ReportCollector:
         if moduleReport := ReportCollector._extract_module_report(stage):
             stage_data["moduleReport"] = moduleReport
 
+        if stage.custom_data:
+            stage_data["customData"] = copy.deepcopy(stage.custom_data)
+
         if stage.status in ReportCollector.__FINAL_STATUSES:
             ReportCollector.__FINISHED_STAGES[stage.uuid] = stage_data
         return stage_data
 
     @staticmethod
-    def _mask_secure_params(data):
+    def _mask_secure_params(key = None, data = None):
         if isinstance(data, dict):
-            return {key: ReportCollector._mask_secure_params(value) for key, value in data.items()}
-        return Constants.DEFAULT_MASKED_VALUE
+            return {key: ReportCollector._mask_secure_params(key=key, data=value) for key, value in data.items()}
+        return StringUtils.mask_value(key=key, value=data)
 
     @staticmethod
     def _extract_ui_view(stage: Stage):

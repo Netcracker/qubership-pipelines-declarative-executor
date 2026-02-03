@@ -1,0 +1,34 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-resource-limits
+  name: Resource Limits Testing
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    TEST_TOKEN: qwerty123
+
+  stages:
+    - name: Load Test 1
+      job: template-load-test
+
+  jobs:
+    template-load-test:
+      type: ${STAGE_TYPE_PY}
+      command: "system-load-test"
+      input:
+        params:
+          params:
+            cpu:
+              run_test: true
+              load: 1
+              duration: 2
+            ram:
+              run_test: true
+              size_mb: 400
+              duration: 3
+              chunks: 4
+            network:
+              run_test: true
+              url: https://speedtest.selectel.ru/100MB
+              download_times: 1

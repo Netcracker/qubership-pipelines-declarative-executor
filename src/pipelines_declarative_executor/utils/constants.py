@@ -17,7 +17,7 @@ class Constants:
     STAGE_REPORT_YAML_FILE_NAME = "module_report.yaml"
     PIPELINE_REPORT_FOR_REPORT_STAGE_FILE_NAME = "pipeline_report.json"
 
-    DEFAULT_MASKED_VALUE = "*****"
+    DEFAULT_MASKED_VALUE = "[MASKED]"
 
 
 class StatusCodes:

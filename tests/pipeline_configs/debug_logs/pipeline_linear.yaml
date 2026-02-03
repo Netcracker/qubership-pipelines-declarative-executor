@@ -10,16 +10,16 @@ pipeline:
 
   stages:
     - name: Spam Cmd 1
-      job: template-py-stage
+      job: template-spam-stage
 
     - name: Spam Cmd 2
-      job: template-py-stage
+      job: template-spam-stage
 
     - name: Spam Cmd 3
-      job: template-py-stage
+      job: template-spam-stage
 
   jobs:
-    template-py-stage:
+    template-spam-stage:
       type: ${STAGE_TYPE_PY}
       command: "spam"
       input:

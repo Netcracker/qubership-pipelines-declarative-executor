@@ -75,3 +75,28 @@ But we do lose:
 ### Research PoCs
 
 Prototypes of "Built-in" and "Import" solutions are available in `rnd/perf_testing` branch
+
+### Resource Usage of PDE and invoked CLIs
+
+The following observations were made while testing PDE within a Docker image (based on `python:3.11-slim`) running on a GitHub Public Worker using `ubuntu-latest`.
+
+The PDE application itself averages **~60 MB** of memory usage. When running a test pipeline with 500 random stages, memory usage increased linearly by 4 MB.
+
+The smallest invoked "Python Modules" use **~30 MB**. More realistic applications (e.g., the `github-run-pipeline` command) peak at around **50 MB**.
+
+However, there is no set limit on what commands can do or how much memory they can consume.
+To be safe, you can implement memory limitations within commands themselves by managing available virtual memory and catching potential `MemoryError` exceptions in heavy-weight scenarios.
+
+You can check peak memory and average CPU usage of your "Python Modules" within pipelines by enabling the `PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_PROFILER_STATS` flag.
+Resource usage columns will then be added to the resulting report table.
+
+### Resource Manager
+
+PDE includes a `Resource Manager` that prevents invoking subprocesses when certain conditions are met.
+
+It limits the number of simultaneously running subprocesses (defaulting to the number of available CPU cores).
+It also checks available memory, ensuring it's greater than the configured `REQUIRED_MEMORY_PER_SUBPROCESS` value.
+
+If either condition prevents starting a subprocess, the current processing stage will wait for resources to become available. The timeout for this wait is also configurable.
+
+You can view all configuration options [in the configurable ENV Properties](./env_vars.md#resource-manager-params)
