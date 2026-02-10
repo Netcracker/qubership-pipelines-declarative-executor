@@ -51,16 +51,38 @@ class LoggingUtils:
 
     @staticmethod
     def log_env_vars():
-        logged_vars = [
-            "GLOBAL_CONFIGS_PREFIX",
-            "ENABLE_FULL_EXECUTION_LOG", "ENABLE_PROFILER_STATS", "ENABLE_MODULE_STDOUT_LOG",
-            "REPORT_SEND_MODE", "REPORT_SEND_INTERVAL", "REPORT_STATUS_POLL_INTERVAL",
-            "ENCRYPT_OUTPUT_PARAMS", "FAIL_ON_MISSING_SOPS",
-            "SHELL_PROCESS_TIMEOUT", "SOPS_PROCESS_TIMEOUT",
-            "ENABLE_RESOURCE_MANAGER", "RESOURCE_MANAGER_QUEUE_TIMEOUT",
-            "MAX_CONCURRENT_STAGES", "REQUIRED_MEMORY_PER_SUBPROCESS",
-            "PYTHON_MODULE_PATH", "EXECUTION_URL", "EXECUTION_USER", "EXECUTION_EMAIL",
-            "IS_LOCAL_DEBUG",
-        ]
-        env_info = "\n".join([f"{var_name}: {getattr(EnvVar, var_name)}" for var_name in logged_vars])
-        logging.info("\n" + env_info)
+        logged_vars = {
+            "GENERAL": [
+                "GLOBAL_CONFIGS_PREFIX", "PYTHON_MODULE_PATH"
+            ],
+            "DEBUG": [
+                "IS_LOCAL_DEBUG", "ENABLE_FULL_EXECUTION_LOG",
+                "ENABLE_MODULE_STDOUT_LOG", "ENABLE_DEBUG_DATA_COLLECTOR"
+            ],
+            "REMOTE REPORT": [
+                "REPORT_SEND_MODE", "REPORT_SEND_INTERVAL", "REPORT_STATUS_POLL_INTERVAL"
+            ],
+            "ENCRYPTION": [
+                "ENCRYPT_OUTPUT_PARAMS", "FAIL_ON_MISSING_SOPS"
+            ],
+            "SUBPROCESSES": [
+                "SHELL_PROCESS_TIMEOUT", "SOPS_PROCESS_TIMEOUT"
+            ],
+            "RESOURCE MANAGEMENT": [
+                "ENABLE_RESOURCE_MANAGER", "MAX_CONCURRENT_STAGES",
+                "REQUIRED_MEMORY_PER_SUBPROCESS", "RESOURCE_MANAGER_QUEUE_TIMEOUT"
+            ],
+            "PROFILING": [
+                "ENABLE_PROFILER_STATS",
+                "ENABLE_STAGE_RESOURCE_USAGE_PROFILING", "STAGE_RESOURCE_USAGE_PROFILING_INTERVAL",
+                "ENABLE_PEAK_RESOURCE_USAGE_PROFILING", "PEAK_RESOURCE_USAGE_PROFILING_INTERVAL"
+            ],
+            "WRAPPER VARS": [
+                "EXECUTION_URL", "EXECUTION_USER", "EXECUTION_EMAIL"
+            ],
+        }
+        env_info = ""
+        for section, var_names in logged_vars.items():
+            env_info += f"\n> {section}:\n"
+            env_info += "\n".join([f"    {var_name}: {getattr(EnvVar, var_name)}" for var_name in var_names])
+        logging.info(env_info)

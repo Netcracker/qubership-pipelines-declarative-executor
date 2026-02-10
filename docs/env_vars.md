@@ -5,14 +5,27 @@
 | Name                                                       |          Default Value          | Comment                                                                                              |
 |------------------------------------------------------------|:-------------------------------:|------------------------------------------------------------------------------------------------------|
 | PIPELINES_DECLARATIVE_EXECUTOR_GLOBAL_CONFIGS_PREFIX       |      CUSTOM_GLOBAL_CONFIG       | Env Vars with this prefix will be treated as AtlasConfigs                                            |
-| PIPELINES_DECLARATIVE_EXECUTOR_SHELL_PROCESS_TIMEOUT       |               30                | Timeout in seconds for invoked shell subprocesses                                                    |
-| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_FULL_EXECUTION_LOG   |              True               | Enables full process debug-logging in workdir                                                        |
-| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_PROFILER_STATS       |              False              | Enables profiler stats (dumped to log at the end of execution) (also logs stage execution timing)    |
-| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_MODULE_STDOUT_LOG    |              True               | Enables logging of invoked shell commands stdout (including "Python Modules")                        |
-| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_DEBUG_DATA_COLLECTOR |              True               | Enables debug data collection after pipeline execution (available in 'x_debug' directory)            |
 | PIPELINES_DECLARATIVE_EXECUTOR_PYTHON_MODULE_PATH          |              None               | Path to .PYZ or unzipped folder with "Python Module" Commands (automatically set in Docker image)    |
 | PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES_FILE_PATH        |              None               | Path to file with JSON string with Auth Rules config (will be checked here first)                    |
 | PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES                  |              None               | JSON string with Auth Rules config (sample is in [config examples](./config_examples.md#auth_rules)) |
+
+### Debug Params
+
+| Name                                                       | Default Value | Comment                                                                                   |
+|------------------------------------------------------------|:-------------:|-------------------------------------------------------------------------------------------|
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_FULL_EXECUTION_LOG   |     True      | Enables full process debug-logging in workdir                                             |
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_MODULE_STDOUT_LOG    |     True      | Enables logging of invoked shell commands stdout (including "Python Modules")             |
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_DEBUG_DATA_COLLECTOR |     True      | Enables debug data collection after pipeline execution (available in 'x_debug' directory) |
+
+### Profiling Params
+
+| Name                                                                   | Default Value | Comment                                                                                         |
+|------------------------------------------------------------------------|:-------------:|-------------------------------------------------------------------------------------------------|
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_PROFILER_STATS                   |     False     | Enables profiler stats (dumped to log at the end of execution)                                  |
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_STAGE_RESOURCE_USAGE_PROFILING   |     False     | Enables profiling resource usage of invoked subprocesses (logs this data to final report table) |
+| PIPELINES_DECLARATIVE_EXECUTOR_STAGE_RESOURCE_USAGE_PROFILING_INTERVAL |      0.1      | Interval in seconds between subprocess profiling attempts                                       |
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_PEAK_RESOURCE_USAGE_PROFILING    |     True      | Enables application-wide peak resource usage profiling (logs this data to final report table)   |
+| PIPELINES_DECLARATIVE_EXECUTOR_PEAK_RESOURCE_USAGE_PROFILING_INTERVAL  |      0.1      | Interval in seconds between peak usage profiling attempts                                       |
 
 ### Resource Manager Params
 
@@ -31,7 +44,13 @@
 | PIPELINES_DECLARATIVE_EXECUTOR_ENCRYPT_OUTPUT_SECURE_PARAMS |     True      | Whether resulting pipeline's `output_params_secure.yaml` should be SOPS-encrypted                               |
 | SOPS_AGE_RECIPIENTS                                         |     None      | SOPS Public key (used for for encryption)                                                                       |
 | SOPS_AGE_KEY                                                |     None      | SOPS Private key (used for for decryption)                                                                      |
-| PIPELINES_DECLARATIVE_EXECUTOR_SOPS_PROCESS_TIMEOUT         |      10       | Timeout in seconds for invoked SOPS encryption/decryption subprocesses                                          |
+
+### Subprocesses Params
+
+| Name                                                 | Default Value | Comment                                                                |
+|------------------------------------------------------|:-------------:|------------------------------------------------------------------------|
+| PIPELINES_DECLARATIVE_EXECUTOR_SHELL_PROCESS_TIMEOUT |      30       | Timeout in seconds for invoked shell subprocesses                      |
+| PIPELINES_DECLARATIVE_EXECUTOR_SOPS_PROCESS_TIMEOUT  |      10       | Timeout in seconds for invoked SOPS encryption/decryption subprocesses |
 
 ### Executor Wrapper Params
 
@@ -41,7 +60,7 @@
 | PIPELINES_DECLARATIVE_EXECUTOR_EXECUTION_USER  |     None      | User who triggered execution instance            |
 | PIPELINES_DECLARATIVE_EXECUTOR_EXECUTION_EMAIL |     None      | Email of a user who triggered execution instance |
 
-### Report Params
+### Remote Report Params
 
 | Name                                                             | Default Value | Comment                                                                                                                 |
 |------------------------------------------------------------------|:-------------:|-------------------------------------------------------------------------------------------------------------------------|

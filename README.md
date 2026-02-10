@@ -73,7 +73,7 @@ Separate article on syntax with examples [is available here](docs/atlas_pipeline
 
 Executor collects and can upload report (intended for UI representation) of currently executed pipeline.
 
-This feature is configured via env variables in [Report section](docs/env_vars.md#report-params).
+This feature is configured via env variables in [Report section](docs/env_vars.md#remote-report-params).
 You can select `REPORT_SEND_MODE` (either `ON_COMPLETION` or `PERIODIC`), send intervals, and endpoint configs:
 
 Report configuration [example is here](docs/config_examples.md#report_remote_endpoints)

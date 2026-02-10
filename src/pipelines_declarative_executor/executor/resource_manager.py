@@ -7,6 +7,11 @@ from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 
 class ResourceManager:
 
+    PEAKS = {
+        "memory": {"value": 0.0, "datetime": None},
+        "cpu": {"value": 0.0, "datetime": None}
+    }
+
     _current_count = 0
     _lock = None
     _condition = None
