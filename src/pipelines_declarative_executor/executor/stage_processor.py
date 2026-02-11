@@ -40,16 +40,12 @@ class StageProcessor:
         execution.store_state() # just for UI realtime rendering?
 
         try:
-            shell_timer, store_results_timer = None, None
-            with ProfilingUtils.Timer() as prepare_files_timer:
-                ContextFilesProcessor.prepare_stage_folder(execution, stage, parent_stage)
-
+            ContextFilesProcessor.prepare_stage_folder(execution, stage, parent_stage)
             if stage.type in [StageType.PYTHON_MODULE, StageType.REPORT]:
                 command = (f"python {stage.path} {stage.command} "
                            f"--context_path={stage.exec_dir.joinpath('context.yaml')} "
                            f"--log-level={LoggingUtils.get_log_level_name()}")
-                with ProfilingUtils.Timer() as shell_timer:
-                    await StageProcessor._run_shell_command(stage, execution, command, logged_cmd_name=f"{stage.path} {stage.command}")
+                await StageProcessor._run_shell_command(stage, execution, command, logged_cmd_name=f"{stage.path} {stage.command}")
             elif stage.type == StageType.SHELL_COMMAND:
                 await StageProcessor._run_shell_command(stage, execution, stage.command, logged_cmd_name=stage.command)
             elif stage.type == StageType.PARALLEL_BLOCK:
@@ -61,8 +57,7 @@ class StageProcessor:
 
             if stage.type not in COMPLEX_TYPES:
                 stage.status = ExecutionStatus.SUCCESS
-                with ProfilingUtils.Timer() as store_results_timer:
-                    ContextFilesProcessor.store_stage_results(execution, stage)
+                ContextFilesProcessor.store_stage_results(execution, stage)
         except asyncio.CancelledError:
             stage.status = ExecutionStatus.CANCELLED
             raise
@@ -72,15 +67,6 @@ class StageProcessor:
             raise StageExecutionException(f"Stage {stage.name} failed")
         finally:
             StageProcessor._post_process(execution, stage)
-            if stage.type in [StageType.PYTHON_MODULE, StageType.REPORT] and EnvVar.ENABLE_PROFILER_STATS:
-                if shell_timer and prepare_files_timer and store_results_timer:
-                    execution.logger.debug(
-                        f"{stage.logged_name()} - "
-                        f"total stage time: {(stage.finish_time - stage.start_time).total_seconds() * 1000:.0f} ms, "
-                        f"CLI execution: {shell_timer.elapsed_time_ms:.0f} ms, "
-                        f"prepare files: {prepare_files_timer.elapsed_time_ms:.0f} ms, "
-                        f"store results: {store_results_timer.elapsed_time_ms:.0f} ms"
-                    )
 
     @staticmethod
     def _check_retry_status(execution: PipelineExecution, stage: Stage) -> bool:
@@ -108,7 +94,8 @@ class StageProcessor:
     @staticmethod
     def _post_process(execution: PipelineExecution, stage: Stage):
         stage.finish_time = datetime.now()
-        execution.logger.info(f"Finish processing stage {stage.logged_name()} - {stage.status}")
+        total_time_log = f"(time: {stage.logged_time()})" if stage.type in [StageType.PYTHON_MODULE, StageType.REPORT] else ""
+        execution.logger.info(f"Finish processing stage {stage.logged_name()} - {stage.status} {total_time_log}")
         execution.store_state()
 
     @staticmethod
@@ -121,12 +108,12 @@ class StageProcessor:
         if not await ResourceManager.acquire():
             raise Exception(f"Resource acquisition timeout for stage {stage.logged_name()}")
 
-        process, stdout, stderr, monitor_task = None, None, None, None
+        process, stdout, stderr = None, None, None
         try:
             process = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-            if EnvVar.ENABLE_PROFILER_STATS and process.pid:
-                metrics = ProfilingUtils.get_monitoring_metrics()
-                monitor_task = asyncio.create_task(ProfilingUtils.monitor_process(pid=process.pid, metrics=metrics))
+            if EnvVar.ENABLE_STAGE_RESOURCE_USAGE_PROFILING and process.pid:
+                metrics = ProfilingUtils.get_profiling_metrics()
+                profiling_task = asyncio.create_task(ProfilingUtils.profile_process(pid=process.pid, metrics=metrics))
             try:
                 stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=EnvVar.SHELL_PROCESS_TIMEOUT)
             except asyncio.TimeoutError:
@@ -145,18 +132,18 @@ class StageProcessor:
                 await ResourceManager.release()
             except Exception as e:
                 execution.logger.error(f"Error releasing resources: [{type(e)} - {str(e)}]")
-            if EnvVar.ENABLE_PROFILER_STATS:
-                await StageProcessor._run_shell_command_finalize(stage, monitor_task, metrics)
+            if EnvVar.ENABLE_STAGE_RESOURCE_USAGE_PROFILING:
+                await StageProcessor._run_shell_command_finalize(stage, profiling_task, metrics)
 
         await StageProcessor._run_shell_command_log(stage, execution, process, stdout, stderr, expected_return_code, logged_cmd_name)
 
 
     @staticmethod
-    async def _run_shell_command_finalize(stage: Stage, monitor_task: asyncio.Task, metrics: dict):
-        if monitor_task and not monitor_task.done():
-            monitor_task.cancel()
+    async def _run_shell_command_finalize(stage: Stage, profiling_task: asyncio.Task, metrics: dict):
+        if profiling_task and not profiling_task.done():
+            profiling_task.cancel()
             try:
-                await monitor_task
+                await profiling_task
             except asyncio.CancelledError:
                 pass
 
@@ -169,14 +156,13 @@ class StageProcessor:
 
     @staticmethod
     async def _run_shell_command_log(stage: Stage, execution: PipelineExecution, process, stdout, stderr, expected_return_code: int, logged_cmd_name: str):
-        execution.logger.debug(f'{stage.logged_name()} - [{logged_cmd_name}] finished with return_code={process.returncode}')
         if stdout and EnvVar.ENABLE_MODULE_STDOUT_LOG:
             normalized_output = StringUtils.normalize_line_endings(stdout.decode(errors="ignore").strip())
-            execution.logger.info(f'Shell STDOUT for {stage.logged_name()}:\n{normalized_output}')
+            execution.logger.info(f'Shell STDOUT for {stage.logged_name()} (return_code={process.returncode}):\n{normalized_output}')
         if stderr or process.returncode != expected_return_code:
             if stderr:
                 normalized_output = StringUtils.normalize_line_endings(stderr.decode(errors="ignore").strip())
-                execution.logger.error(f'Shell STDERR for {stage.logged_name()}:\n{normalized_output}')
+                execution.logger.error(f'Shell STDERR for {stage.logged_name()} (return_code={process.returncode}):\n{normalized_output}')
             raise Exception(f"Error during {stage.logged_name()} - \"{logged_cmd_name}\"")
 
     @staticmethod

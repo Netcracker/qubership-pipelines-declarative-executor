@@ -7,6 +7,7 @@ pipeline:
   vars:
     STAGE_TYPE_PY: PYTHON_MODULE
     TEST_TOKEN: qwerty123
+    ENABLE_RANDOM_SLEEP: true
 
   stages:
     - name: Spam Cmd 1
@@ -28,7 +29,7 @@ pipeline:
             param_count: 3
             sleep_time: 0.25
             sleep_period: 0.05
-            random_sleep: true
+            random_sleep: ${ENABLE_RANDOM_SLEEP}
             print_all_level_logs: true
         params_secure:
           systems:

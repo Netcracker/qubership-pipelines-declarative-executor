@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
+from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 
 class ExecutionStatus(StrEnum):
@@ -61,6 +62,15 @@ class Stage:
 
     def logged_name(self) -> str:
         return f"\"{self.name}\" (id={self.id}, uuid={self.uuid})"
+
+    def logged_time(self) -> str:
+        if not self.start_time or not self.finish_time:
+            return "N/A"
+        seconds = (self.finish_time - self.start_time).total_seconds()
+        if seconds < 60:
+            return f"{seconds:.3f}s"
+        else:
+            return StringUtils.get_duration_str(start_time=self.start_time, finish_time=self.finish_time)
 
 
 @dataclass

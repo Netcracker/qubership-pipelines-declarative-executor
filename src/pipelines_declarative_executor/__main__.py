@@ -22,7 +22,7 @@ def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is
     setup_cli_logging(log_level)
     logging.info(f'command "RUN" with params:\npipeline_data="{pipeline_data}"\npipeline_vars="{pipeline_vars}"'
                  f'\npipeline_dir="{pipeline_dir}"\nis_dry_run="{is_dry_run}"\nlog_level="{log_level}"')
-    with (ProfilingUtils.time_it(), ProfilingUtils.profile_it()):
+    with (ProfilingUtils.time_it(), ProfilingUtils.profile_it(), ProfilingUtils.track_peak_usage()):
         asyncio.run(create_and_run_pipeline(pipeline_data, pipeline_vars, pipeline_dir, is_dry_run))
 
 
@@ -36,7 +36,7 @@ def __retry_pipeline(pipeline_dir: str, retry_vars: str, log_level: str):
     setup_cli_logging(log_level)
     logging.info(f'command "RETRY" with params:\npipeline_dir="{pipeline_dir}"\nretry_vars="{retry_vars}"'
                  f'\nlog_level="{log_level}"')
-    with (ProfilingUtils.time_it(), ProfilingUtils.profile_it()):
+    with (ProfilingUtils.time_it(), ProfilingUtils.profile_it(), ProfilingUtils.track_peak_usage()):
         asyncio.run(retry_pipeline(pipeline_dir, retry_vars))
 
 
@@ -122,7 +122,7 @@ if __name__ == '__main__':
         setup_cli_logging("DEBUG")
         logging.debug("=" * 60)
         logging.warning("RUNNING IN LOCAL DEBUG MODE!")
-        with (ProfilingUtils.time_it("Total time"), ProfilingUtils.profile_it()):
+        with (ProfilingUtils.time_it("Total time"), ProfilingUtils.profile_it(), ProfilingUtils.track_peak_usage()):
             logging.info("Local Debug run")
             # asyncio.run(local_main_debug())
     else:

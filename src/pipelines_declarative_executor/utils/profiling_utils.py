@@ -27,7 +27,7 @@ class ProfilingUtils:
         finally:
             end = time.perf_counter()
             elapsed = end - start
-            logging.info(f"{message}Executed in {elapsed:.6f} seconds")
+            logging.info(f"{message}Executed in {elapsed:.3f} seconds")
 
     @staticmethod
     @contextmanager
@@ -46,10 +46,14 @@ class ProfilingUtils:
             stats = pstats.Stats(profiler, stream=stats_stream)
             stats.sort_stats(SortKey.TIME)
             stats.print_stats(30)
-            logging.info("PROFILING RESULT:\n%s", stats_stream.getvalue())
+            logging.info(
+                f"\n========== Application Profiling Result =========="
+                f"\n{stats_stream.getvalue()}"
+                f"{'=' * 50}"
+            )
 
     @staticmethod
-    def get_monitoring_metrics() -> dict:
+    def get_profiling_metrics() -> dict:
         return {
             'peak_memory_mb': 0.0,
             'avg_cpu': 0.0,
@@ -58,7 +62,7 @@ class ProfilingUtils:
         }
 
     @staticmethod
-    async def monitor_process(pid: int, metrics: dict, interval: float = 0.1):
+    async def profile_process(pid: int, metrics: dict, interval: float = EnvVar.STAGE_RESOURCE_USAGE_PROFILING_INTERVAL):
         try:
             import psutil, asyncio
             parent = psutil.Process(pid)
@@ -84,9 +88,68 @@ class ProfilingUtils:
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     break
                 except Exception as e:
-                    logging.debug(f"Monitoring error for PID {pid}: {e}")
+                    logging.debug(f"Profiling error for PID {pid}: {e}")
 
                 await asyncio.sleep(interval)
 
         except Exception as e:
-            logging.debug(f"Failed to monitor process {pid}: {e}")
+            logging.debug(f"Failed to profile process {pid}: {e}")
+
+    @staticmethod
+    @contextmanager
+    def track_peak_usage():
+        if not EnvVar.ENABLE_PEAK_RESOURCE_USAGE_PROFILING:
+            yield
+            return
+        import os, threading, psutil
+        from datetime import datetime
+        from pipelines_declarative_executor.executor.resource_manager import ResourceManager
+        root_pid = os.getpid()
+        stop_event = threading.Event()
+        profiling_interval = EnvVar.PEAK_RESOURCE_USAGE_PROFILING_INTERVAL
+
+        def profiling_thread():
+            try:
+                root = psutil.Process(root_pid)
+                processes = {root.pid: root}
+                while not stop_event.is_set():
+                    try:
+                        for child in root.children(recursive=True):
+                            if child.pid not in processes:
+                                processes[child.pid] = child
+
+                        current_memory_mb, current_cpu_percent = 0.0, 0.0
+                        dead_pids = []
+                        for pid, proc in processes.items():
+                            try:
+                                mem_info = proc.memory_info()
+                                current_memory_mb += mem_info.rss / (1024 * 1024)
+                                current_cpu_percent += proc.cpu_percent(interval=None)
+                            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                                dead_pids.append(pid)
+                                continue
+                        for pid in dead_pids:
+                            processes.pop(pid, None)
+
+                        if current_memory_mb > ResourceManager.PEAKS['memory']['value']:
+                            ResourceManager.PEAKS['memory']['value'] = current_memory_mb
+                            ResourceManager.PEAKS['memory']['datetime'] = datetime.now()
+                        if current_cpu_percent > ResourceManager.PEAKS['cpu']['value']:
+                            ResourceManager.PEAKS['cpu']['value'] = current_cpu_percent
+                            ResourceManager.PEAKS['cpu']['datetime'] = datetime.now()
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        break
+                    except Exception as e:
+                        logging.warning(f"Peak Resource Usage profiling error: {e}")
+
+                    stop_event.wait(profiling_interval)
+            except Exception as e:
+                logging.warning(f"Peak Resource Usage error: {e}")
+
+        thread = threading.Thread(target=profiling_thread, daemon=True)
+        thread.start()
+        try:
+            yield
+        finally:
+            stop_event.set()
+            thread.join(timeout=1.0)

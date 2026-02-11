@@ -33,7 +33,7 @@ on:
         type: string
         required: false
       custom_image:
-        default: "ghcr.io/netcracker/qubership-pipelines-declarative-executor:v2.0.3"
+        default: "ghcr.io/netcracker/qubership-pipelines-declarative-executor:v2.0.4"
         type: string
         required: false
 

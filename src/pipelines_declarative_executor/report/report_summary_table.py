@@ -74,21 +74,22 @@ class ReportSummaryTable:
                 row['command'],
             ])
 
-        if EnvVar.ENABLE_PROFILER_STATS:
+        if EnvVar.ENABLE_STAGE_RESOURCE_USAGE_PROFILING:
             headers.extend(["Peak Mem", "Avg Cpu"])
             for i, row in enumerate(rows):
                 table_data[i].extend([row['peakMem'], row['avgCpu']])
 
         lines = []
         lines.append("=" * ReportSummaryTable.TABLE_BORDER_LINE_WIDTH)
+        lines.append(tabulate(table_data, headers, tablefmt=ReportSummaryTable.TABULATE_TABLE_FORMAT))
+        lines.append("=" * ReportSummaryTable.TABLE_BORDER_LINE_WIDTH)
         lines.append(f"PIPELINE SUMMARY: {ReportSummaryTable._get_or_default(report, 'name')}")
         lines.append(f"ID: {ReportSummaryTable._get_or_default(report, 'id')}")
         lines.append(f"Total Duration: {ReportSummaryTable._get_or_default(report, 'time')}")
         lines.append(f"Total Stages: {len(rows)}")
         lines.append(f"Status: {ReportSummaryTable._get_or_default(report, 'status')}")
-        lines.append("=" * ReportSummaryTable.TABLE_BORDER_LINE_WIDTH)
-        lines.append(tabulate(table_data, headers, tablefmt=ReportSummaryTable.TABULATE_TABLE_FORMAT))
-        lines.append("")
+        if EnvVar.ENABLE_PEAK_RESOURCE_USAGE_PROFILING:
+            lines.extend(ReportSummaryTable._build_peak_usage_section())
         lines.append("=" * ReportSummaryTable.TABLE_BORDER_LINE_WIDTH)
 
         return "\n".join(lines)
@@ -98,3 +99,11 @@ class ReportSummaryTable:
         if field not in obj or obj[field] is None:
             return ReportSummaryTable.UNKNOWN_VALUE
         return obj[field]
+
+    @staticmethod
+    def _build_peak_usage_section():
+        from pipelines_declarative_executor.executor.resource_manager import ResourceManager
+        return [
+            f"Peak Memory: {ResourceManager.PEAKS['memory']['value']:.1f} MB (at {ResourceManager.PEAKS['memory']['datetime']})",
+            f"Peak CPU: {ResourceManager.PEAKS['cpu']['value']:.1f}% (at {ResourceManager.PEAKS['cpu']['datetime']})",
+        ]

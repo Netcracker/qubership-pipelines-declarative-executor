@@ -28,7 +28,7 @@ on:
         type: string
         required: false
       custom_image:
-        default: "ghcr.io/netcracker/qubership-pipelines-declarative-executor:v2.0.3"
+        default: "ghcr.io/netcracker/qubership-pipelines-declarative-executor:v2.0.4"
         type: string
         required: false
     secrets:
@@ -57,7 +57,6 @@ jobs:
       PIPELINES_DECLARATIVE_EXECUTOR_EXECUTION_EMAIL: ${{ github.event.sender.id }}+${{ github.actor }}@users.noreply.github.com
       PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES: '[{"host":"githubusercontent.com","type":"token","headers":{"Authorization":"token {token}"},"token_env_var":"GITHUB_TOKEN"}]'
       GITHUB_TOKEN: ${{ github.token }}
-      PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_PROFILER_STATS: true
     container:
       image: ${{ inputs.custom_image }}
 

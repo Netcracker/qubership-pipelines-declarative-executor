@@ -8,6 +8,7 @@ pipeline:
     STAGE_TYPE_PY: PYTHON_MODULE
     STAGE_TYPE_NESTED: ATLAS_PIPELINE_TRIGGER
     TEST_TOKEN: qwerty123
+    ENABLE_RANDOM_SLEEP: true
 
   stages:
     - name: Spam Before Parallel
@@ -44,6 +45,7 @@ pipeline:
           OVER_PARAM_1 = 123
           OVER_PARAM_2 = 4124
           PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+          ENABLE_RANDOM_SLEEP = ${ENABLE_RANDOM_SLEEP}
         is_dry_run: false
       output:
         params:
@@ -67,7 +69,7 @@ pipeline:
             param_count: 3
             sleep_time: 0.5
             sleep_period: 0.1
-            random_sleep: true
+            random_sleep: ${ENABLE_RANDOM_SLEEP}
             print_all_level_logs: true
         params_secure:
           systems:
