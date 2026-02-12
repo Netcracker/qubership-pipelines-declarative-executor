@@ -21,7 +21,7 @@ class ConditionProcessor:
         try:
             condition = execution.vars.calculate_expression(when.condition)
             result = eval(condition, execution.vars.all_vars())
-            execution.logger.debug(f"Condition ('{condition}') evaluation result: {result if isinstance(result, bool) else result + ' -> ' + bool(result)}")
+            execution.logger.debug(f"Condition ('{condition}') evaluation result: {bool(result)}")
             return bool(result)
         except Exception as e:
             execution.logger.error(f"Error during calculation of condition - '{when.condition}' - {e}")

@@ -60,6 +60,17 @@ Stages can define complex input and output configurations.
 
 Params support **variable substitution** - use `${VARIABLE}` syntax for dynamic values
 
+Variables after any substitution are returned as strings - so you can not pass lists or dicts into stages' inputs as is - they will be wrapped in quotes!
+In the following sample config, stage will receive substituted variable as `'[''test_value1'', ''test_value2'']'`
+
+```yaml
+  # APPS_LIST var is produced by the previous stage and is a list of strings - ["test_value1", "test_value2"]
+  input:
+    params:
+      params:
+        APPS_LIST: ${APPS_LIST}
+```
+
 There are three available sections for input/output parameters:
 
 - `params` - for non-sensitive configuration (supports multi-level nesting)
