@@ -1,10 +1,10 @@
-import asyncio, aiohttp, logging, json, io
+import asyncio, aiohttp, logging, json, gzip, io
 
 from aiohttp import BasicAuth
 from miniopy_async import Minio
 
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
-from pipelines_declarative_executor.model.report import RemoteEndpointConfig, HttpEndpointConfig, S3EndpointConfig, ReportUploadMode
+from pipelines_declarative_executor.model.report import RemoteEndpointConfig, HttpEndpointConfig, S3EndpointConfig, ReportUploadMode, ReportUploadType
 from pipelines_declarative_executor.model.stage import ExecutionStatus
 from pipelines_declarative_executor.report.report_collector import ReportCollector
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar, EnvVarUtils
@@ -18,9 +18,14 @@ class ReportUploader:
         self.s3_clients = []
         for config in configs:
             if isinstance(config, HttpEndpointConfig):
+                headers = config.headers or {}
+                if config.use_compression:
+                    headers["Content-Encoding"] = "gzip"
+                headers["Content-Type"] = "application/json"
                 self.http_sessions.append({
-                    "session": aiohttp.ClientSession(auth=config.auth, headers=config.headers),
+                    "session": aiohttp.ClientSession(auth=config.auth, headers=headers),
                     "endpoint": config.endpoint,
+                    "use_compression": config.use_compression,
                 })
             elif isinstance(config, S3EndpointConfig):
                 self.s3_clients.append({
@@ -32,6 +37,7 @@ class ReportUploader:
                     ),
                     "bucket_name": config.bucket_name,
                     "object_name": config.object_name,
+                    "use_compression": config.use_compression,
                 })
             else:
                 logging.error(f"Unknown report RemoteEndpointConfig type: {type(config)}")
@@ -70,7 +76,7 @@ class ReportUploader:
 
     async def _send_report(self):
         try:
-            report = self._get_report()
+            report = self._get_report().encode("utf-8")
             upload_tasks = []
             for session_data in self.http_sessions:
                 upload_tasks.append(self._upload_via_http(session_data, report))
@@ -87,27 +93,29 @@ class ReportUploader:
         raise Exception("Report not found!")
 
     @staticmethod
-    async def _upload_via_http(session_data: dict, report: str):
+    async def _upload_via_http(session_data: dict, report: bytes):
         try:
             logging.debug(f"Uploading execution report via HTTP to {session_data.get('endpoint')}")
-            async with session_data.get("session").post(session_data.get("endpoint"), json=json.loads(report)) as response:
+            report_body = gzip.compress(report) if session_data.get("use_compression") else report
+            async with session_data.get("session").post(session_data.get("endpoint"), data=report_body) as response:
                 response.raise_for_status()
                 logging.debug(f"Upload via HTTP to {session_data.get('endpoint')} finished")
         except Exception as e:
             logging.error(f"Exception during uploading report via HTTP: [{type(e)} - {str(e)}]")
 
     @staticmethod
-    async def _upload_via_s3(s3_data: dict, report: str):
+    async def _upload_via_s3(s3_data: dict, report: bytes):
         try:
             logging.debug(f"Uploading execution report via S3 to bucket {s3_data.get('bucket_name')}")
-            report_bytes = report.encode('utf-8')
-            data_stream = io.BytesIO(report_bytes)
+            report_body = gzip.compress(report) if s3_data.get("use_compression") else report
+            metadata = {"Content-Encoding": 'gzip'} if s3_data.get("use_compression") else None
             await s3_data.get("client").put_object(
                 bucket_name=s3_data.get("bucket_name"),
                 object_name=s3_data.get("object_name"),
-                data=data_stream,
-                length=len(report_bytes),
-                content_type='application/json'
+                data=io.BytesIO(report_body),
+                length=len(report_body),
+                content_type='application/json',
+                metadata=metadata,
             )
             logging.debug(f"Upload via S3 to bucket '{s3_data.get('bucket_name')}' finished")
         except Exception as e:
@@ -147,20 +155,22 @@ class ReportUploader:
             if not config_type:
                 raise KeyError("Endpoint configuration missing 'type' field")
 
-            if config_type == "http":
+            if config_type == ReportUploadType.HTTP:
                 endpoint_config = HttpEndpointConfig(
                     endpoint=config_item.get("endpoint"),
                     auth=ReportUploader._get_basic_auth(config_item),
-                    headers=ReportUploader._get_headers(config_item)
+                    headers=ReportUploader._get_headers(config_item),
+                    use_compression=config_item.get("use_compression", EnvVar.REPORT_UPLOAD_USE_COMPRESSION_DEFAULT),
                 )
 
-            elif config_type == "s3":
+            elif config_type == ReportUploadType.S3:
                 endpoint_config = S3EndpointConfig(
                     host=config_item.get("host"),
                     access_key=config_item.get("access_key"),
                     secret_key=config_item.get("secret_key"),
                     bucket_name=config_item.get("bucket_name"),
-                    object_name=config_item.get("object_name")
+                    object_name=config_item.get("object_name"),
+                    use_compression=config_item.get("use_compression", EnvVar.REPORT_UPLOAD_USE_COMPRESSION_DEFAULT),
                 )
 
             else:

@@ -1,5 +1,6 @@
 import os
 import sys
+import gzip
 import json
 import aiofiles
 import logging
@@ -46,7 +47,18 @@ def require_bearer_auth(handler):
 @require_bearer_auth
 async def send_report(request):
     try:
-        data = await request.json()
+        body = await request.read()
+        is_gzip_encoded = request.headers.get('Content-Encoding', '') == 'gzip'
+        request_bytes = gzip.decompress(body) if is_gzip_encoded else body
+        data = json.loads(request_bytes.decode('utf-8'))
+        json_size = len(request_bytes)
+        if is_gzip_encoded:
+            compressed_size = len(body)
+            ratio = json_size / compressed_size
+            logging.info(f"Received report: compressed={compressed_size} bytes, decompressed={json_size} bytes, ratio={ratio:.2f}")
+        else:
+            logging.info(f"Received report: size={json_size} bytes")
+
         async with aiofiles.open(REPORT_FILE, 'w') as f:
             await f.write(json.dumps(data))
         return web.json_response({'status': 'success'})
@@ -92,4 +104,4 @@ if __name__ == "__main__":
                         format=u'[%(asctime)s] [%(levelname)-s] [%(filename)s]: %(message)s')
     os.makedirs(os.path.dirname(REPORT_FILE), exist_ok=True)
     app = create_app()
-    web.run_app(app, host='0.0.0.0', port=8000)
+    web.run_app(app, host='0.0.0.0', port=8000, auto_decompress=False)

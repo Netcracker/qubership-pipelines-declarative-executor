@@ -62,10 +62,11 @@
 
 ### Remote Report Params
 
-| Name                                                             | Default Value | Comment                                                                                                                 |
-|------------------------------------------------------------------|:-------------:|-------------------------------------------------------------------------------------------------------------------------|
-| PIPELINES_DECLARATIVE_EXECUTOR_REPORT_SEND_MODE                  | ON_COMPLETION | Whether report should be sent when pipeline execution finishes (`ON_COMPLETION`) or periodically (`PERIODIC`)           |
-| PIPELINES_DECLARATIVE_EXECUTOR_REPORT_SEND_INTERVAL              |       5       | Interval in seconds between report snapshot uploads to remote host                                                      |
-| PIPELINES_DECLARATIVE_EXECUTOR_REPORT_STATUS_POLL_INTERVAL       |      0.5      | Interval in seconds between status checks of current running pipeline when `SEND_MODE` is set to `ON_COMPLETION`        |
-| PIPELINES_DECLARATIVE_EXECUTOR_REPORT_REMOTE_ENDPOINTS_FILE_PATH |     None      | Path to file with JSON string with remote endpoint configs (will be checked here first)                                 |
-| PIPELINES_DECLARATIVE_EXECUTOR_REPORT_REMOTE_ENDPOINTS           |     None      | JSON string with remote endpoint configs (sample is in [config examples](./config_examples.md#report_remote_endpoints)) |
+| Name                                                                 | Default Value | Comment                                                                                                                 |
+|----------------------------------------------------------------------|:-------------:|-------------------------------------------------------------------------------------------------------------------------|
+| PIPELINES_DECLARATIVE_EXECUTOR_REPORT_SEND_MODE                      | ON_COMPLETION | Whether report should be sent when pipeline execution finishes (`ON_COMPLETION`) or periodically (`PERIODIC`)           |
+| PIPELINES_DECLARATIVE_EXECUTOR_REPORT_SEND_INTERVAL                  |       5       | Interval in seconds between report snapshot uploads to remote host                                                      |
+| PIPELINES_DECLARATIVE_EXECUTOR_REPORT_STATUS_POLL_INTERVAL           |      0.5      | Interval in seconds between status checks of current running pipeline when `SEND_MODE` is set to `ON_COMPLETION`        |
+| PIPELINES_DECLARATIVE_EXECUTOR_REPORT_REMOTE_ENDPOINTS_FILE_PATH     |     None      | Path to file with JSON string with remote endpoint configs (will be checked here first)                                 |
+| PIPELINES_DECLARATIVE_EXECUTOR_REPORT_REMOTE_ENDPOINTS               |     None      | JSON string with remote endpoint configs (sample is in [config examples](./config_examples.md#report_remote_endpoints)) |
+| PIPELINES_DECLARATIVE_EXECUTOR_REPORT_UPLOAD_USE_COMPRESSION_DEFAULT |     True      | Defines default behaviour for endpoints (if it's not explicitly configured) - should report be GZIP encoded/compressed  |

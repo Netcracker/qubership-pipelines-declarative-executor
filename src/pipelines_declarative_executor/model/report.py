@@ -12,6 +12,7 @@ class HttpEndpointConfig(RemoteEndpointConfig):
     endpoint: str = None
     auth: BasicAuth = None
     headers: dict = None
+    use_compression: bool = None
 
 
 @dataclass
@@ -21,8 +22,14 @@ class S3EndpointConfig(RemoteEndpointConfig):
     secret_key: str = None
     bucket_name: str = None
     object_name: str = None
+    use_compression: bool = None
 
 
 class ReportUploadMode(StrEnum):
     PERIODIC = "PERIODIC"
     ON_COMPLETION = "ON_COMPLETION"
+
+
+class ReportUploadType(StrEnum):
+    HTTP = "http"
+    S3 = "s3"
