@@ -9,6 +9,9 @@ You can currently specify both `headers` and `auth` sections.
 Auth (for basic auth) will require both `username` and `password`, they can be provided via `username_value` directly in config, or as name of env var - `username_env_var`.
 Token for substitution in `headers` can also be provided via these approaches.
 
+Both endpoint types (s3/http) support `use_compression` param (it defaults to `PIPELINES_DECLARATIVE_EXECUTOR_REPORT_UPLOAD_USE_COMPRESSION_DEFAULT` value when not specified).
+If it's `true`, request body will be GZIP compressed, and `Content-Encoding` = `gzip` will be added to request headers.
+
 ```json
 [
   {
@@ -32,7 +35,8 @@ Token for substitution in `headers` can also be provided via these approaches.
     "headers": {
       "x-SPECIAL-HEADER": "token {token}"
     },
-    "token_env_var": "MY_SPECIAL_TOKEN_ENV_VAR"
+    "token_env_var": "MY_SPECIAL_TOKEN_ENV_VAR",
+    "use_compression": true
   },
   {
     "type": "s3",
@@ -40,7 +44,8 @@ Token for substitution in `headers` can also be provided via these approaches.
     "access_key": "your_access_key",
     "secret_key": "your_secret_key",
     "bucket_name": "your_bucket",
-    "object_name": "your_object"
+    "object_name": "your_object",
+    "use_compression": false
   }
 ]
 ```
