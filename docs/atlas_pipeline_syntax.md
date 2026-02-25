@@ -162,7 +162,7 @@ stages:
 
 ### 'When' Conditions
 
-Declare conditions that defined whether the stage will be executed or not:
+Declare conditions that define whether the stage will be executed or not. `statuses` field also supports `ANY` value.
 
 ```yaml
 - name: Stage with conditions

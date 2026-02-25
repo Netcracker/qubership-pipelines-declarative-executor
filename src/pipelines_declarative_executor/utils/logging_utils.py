@@ -13,7 +13,7 @@ class LoggingUtils:
     CONSOLE_LOG_LEVEL = logging.INFO
     EXECUTION_LOG_NAME = "execution.log"
     FULL_EXECUTION_LOG_NAME = "full_execution.log"
-    DEFAULT_FORMAT = u'[%(asctime)s] [%(levelname)-5s] [class=%(filename)s:%(lineno)-3s] %(message)s'
+    DEFAULT_FORMAT = u'[%(asctime)s] [%(levelname)s] [class=%(filename)s:%(lineno)-3s] %(message)s'
 
     @staticmethod
     def configure_root_logger() -> Logger:

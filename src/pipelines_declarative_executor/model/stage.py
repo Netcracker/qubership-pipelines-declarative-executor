@@ -14,6 +14,7 @@ class ExecutionStatus(StrEnum):
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
     CANCELLED = "CANCELLED"
+    ANY = "ANY"
 
     @staticmethod
     def list_from_string(statuses_str: str) -> list[ExecutionStatus]:
