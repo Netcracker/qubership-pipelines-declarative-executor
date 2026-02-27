@@ -10,6 +10,8 @@ class ConditionProcessor:
 
     @staticmethod
     def _check_status(execution: PipelineExecution, when: When) -> bool:
+        if ExecutionStatus.ANY in when.statuses:
+            return True
         is_any_stage_failed = any(stage.status == ExecutionStatus.FAILED for stage in execution.pipeline.stages)
         return (is_any_stage_failed and ExecutionStatus.FAILED in when.statuses
                 or not is_any_stage_failed and ExecutionStatus.SUCCESS in when.statuses)

@@ -37,7 +37,7 @@ pipeline:
       job: template-py-stage
       command: "calc"
       when:
-        statuses: SUCCESS, FAILED
+        statuses: ANY
       input:
         params:
           params:
