@@ -150,8 +150,8 @@ class StageProcessor:
         if metrics['samples'] > 0:
             metrics['avg_cpu'] = metrics['total_cpu'] / metrics['samples']
         stage.custom_data.update({
-            "avg_cpu": f"{metrics['avg_cpu']:.2f}%",
-            "peak_memory_mb": f"{metrics['peak_memory_mb']:.2f}Mb"
+            "avg_cpu": f"{metrics['avg_cpu']:.1f}%",
+            "peak_memory_mb": f"{metrics['peak_memory_mb']:.1f} MB"
         })
 
     @staticmethod
