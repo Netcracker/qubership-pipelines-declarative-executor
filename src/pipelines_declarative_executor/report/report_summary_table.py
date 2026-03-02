@@ -50,8 +50,8 @@ class ReportSummaryTable:
                 'type': ReportSummaryTable._get_or_default(stage, 'type'),
                 'command': stage.get('command', ""),
                 'level': level,
-                'peakMem': stage.get('customData', {}).get('peak_memory_mb'),
-                'avgCpu': stage.get('customData', {}).get('avg_cpu'),
+                'peakMem': stage.get('performance', {}).get('peakMemory'),
+                'avgCpu': stage.get('performance', {}).get('avgCpu'),
             })
 
             if parallel_stages := stage.get('parallelStages', []):

@@ -2,6 +2,7 @@ import copy
 
 from typing import Any
 from pipelines_declarative_executor.executor.params_processor import ParamsProcessor
+from pipelines_declarative_executor.executor.resource_manager import ResourceManager
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
 from pipelines_declarative_executor.model.stage import Stage, StageType, ExecutionStatus
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
@@ -24,6 +25,7 @@ class ReportCollector:
             "kind": "AtlasPipelineReport",
             "apiVersion": "v2",
             **ReportCollector._prepare_execution(execution),
+            **ReportCollector._prepare_performance(),
             "config": ReportCollector._prepare_config(execution),
             "stages": [],
         }
@@ -44,6 +46,16 @@ class ReportCollector:
             "url": EnvVar.EXECUTION_URL,
             "user": EnvVar.EXECUTION_USER,
             "email": EnvVar.EXECUTION_EMAIL,
+        }
+        return data
+
+    @staticmethod
+    def _prepare_performance() -> dict:
+        data = {
+            "performance": {
+                "peakMemory": f"{ResourceManager.PEAKS['memory']['value']:.1f} MB",
+                "peakCpu": f"{ResourceManager.PEAKS['cpu']['value']:.1f}%",
+            },
         }
         return data
 
@@ -85,7 +97,12 @@ class ReportCollector:
             stage_data["moduleReport"] = moduleReport
 
         if stage.custom_data:
-            stage_data["customData"] = copy.deepcopy(stage.custom_data)
+            # stage_data["customData"] = copy.deepcopy(stage.custom_data)
+            if stage.custom_data.get("peak_memory_mb"):
+                stage_data["performance"] = {
+                    "peakMemory": stage.custom_data.get("peak_memory_mb"),
+                    "avgCpu": stage.custom_data.get("avg_cpu"),
+                }
 
         if stage.status in ReportCollector.__FINAL_STATUSES:
             ReportCollector.__FINISHED_STAGES[stage.uuid] = stage_data

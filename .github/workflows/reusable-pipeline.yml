@@ -28,7 +28,7 @@ on:
         type: string
         required: false
       custom_image:
-        default: "ghcr.io/netcracker/qubership-pipelines-declarative-executor:v2.0.5"
+        default: "ghcr.io/netcracker/qubership-pipelines-declarative-executor:v2.0.6"
         type: string
         required: false
     secrets:
