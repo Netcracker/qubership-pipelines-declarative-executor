@@ -10,6 +10,7 @@ from pipelines_declarative_executor.model.exceptions import StageExecutionExcept
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
 from pipelines_declarative_executor.orchestrator.pipeline_orchestrator import PipelineOrchestrator
 from pipelines_declarative_executor.orchestrator.retry_orchestrator import PipelineRetryOrchestrator
+from pipelines_declarative_executor.utils.color_utils import ColorUtils
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
 from pipelines_declarative_executor.utils.constants import Constants
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
@@ -156,14 +157,17 @@ class StageProcessor:
 
     @staticmethod
     async def _run_shell_command_log(stage: Stage, execution: PipelineExecution, process, stdout, stderr, expected_return_code: int, logged_cmd_name: str):
-        if stdout and EnvVar.ENABLE_MODULE_STDOUT_LOG:
-            normalized_output = StringUtils.normalize_line_endings(stdout.decode(errors="ignore").strip())
-            execution.logger.info(f'Shell STDOUT for {stage.logged_name()} (return_code={process.returncode}):\n{normalized_output}')
-        if stderr or process.returncode != expected_return_code:
-            if stderr:
-                normalized_output = StringUtils.normalize_line_endings(stderr.decode(errors="ignore").strip())
-                execution.logger.error(f'Shell STDERR for {stage.logged_name()} (return_code={process.returncode}):\n{normalized_output}')
-            raise Exception(f"Error during {stage.logged_name()} - \"{logged_cmd_name}\"")
+        header_color = ColorUtils.SUCCESS_COLOR if process.returncode == expected_return_code else ColorUtils.FAILURE_COLOR
+        header = ColorUtils.with_color(message=f" Stage Output from {stage.logged_name()}", color=header_color)
+        with LoggingUtils.collapsible_section(header=header, stage=stage):
+            if stdout and EnvVar.ENABLE_MODULE_STDOUT_LOG:
+                normalized_output = StringUtils.normalize_line_endings(stdout.decode(errors="ignore").strip())
+                execution.logger.info(f'Shell STDOUT for {stage.logged_name()} (return_code={process.returncode}):\n{normalized_output}')
+            if stderr or process.returncode != expected_return_code:
+                if stderr:
+                    normalized_output = StringUtils.normalize_line_endings(stderr.decode(errors="ignore").strip())
+                    execution.logger.error(f'Shell STDERR for {stage.logged_name()} (return_code={process.returncode}):\n{normalized_output}')
+                raise Exception(f"Error during {stage.logged_name()} - \"{logged_cmd_name}\"")
 
     @staticmethod
     async def _run_parallel_block(execution: PipelineExecution, parent_stage: Stage):

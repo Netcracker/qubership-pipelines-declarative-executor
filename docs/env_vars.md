@@ -16,6 +16,7 @@
 | PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_FULL_EXECUTION_LOG   |     True      | Enables full process debug-logging in workdir                                             |
 | PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_MODULE_STDOUT_LOG    |     True      | Enables logging of invoked shell commands stdout (including "Python Modules")             |
 | PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_DEBUG_DATA_COLLECTOR |     True      | Enables debug data collection after pipeline execution (available in 'x_debug' directory) |
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_COLLAPSIBLE_CI_LOGS  |     True      | Hides command's stdout under GitHub/GitLab specific collapsible sections                  |
 
 ### Profiling Params
 

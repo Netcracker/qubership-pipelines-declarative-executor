@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import sys, logging
+import sys, logging, time
+from contextlib import contextmanager
 
 from logging import Logger
 from pathlib import Path
@@ -87,3 +88,22 @@ class LoggingUtils:
             env_info += f"\n> {section}:\n"
             env_info += "\n".join([f"    {var_name}: {getattr(EnvVar, var_name)}" for var_name in var_names])
         logging.info(env_info)
+
+    @staticmethod
+    @contextmanager
+    def collapsible_section(header: str = "Collapsible section", stage = None):
+        if not EnvVar.ENABLE_COLLAPSIBLE_CI_LOGS:
+            yield
+            return
+        gl_timestamp = int(time.time())
+        if EnvVar.IS_GITHUB:
+            print(f"::group::{header}")
+        if EnvVar.IS_GITLAB:
+            print(f"\033[0Ksection_start:{gl_timestamp}:{stage.uuid}[collapsed=true]\r\033[0K ▶{header}")
+        try:
+            yield
+        finally:
+            if EnvVar.IS_GITHUB:
+                print("::endgroup::")
+            if EnvVar.IS_GITLAB:
+                print(f"\033[0Ksection_end:{gl_timestamp}:{stage.uuid}\r\033[0K")
