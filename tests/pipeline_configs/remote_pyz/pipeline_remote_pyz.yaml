@@ -1,0 +1,68 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-complex
+  name: Pipeline with prepare-pyz-module command
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    TEST_TOKEN: qwerty123
+    ENABLE_RANDOM_SLEEP: true
+    REMOTE_PATH: /app/remote_cli
+
+  stages:
+    - name: Prepare Remote CLI
+      type: ${STAGE_TYPE_PY}
+      command: "prepare-pyz-module"
+      input:
+        params:
+          params:
+            download_url: https://github.com/Netcracker/qubership-pipelines-cli-command-samples/releases/download/v0.0.1/qubership_cli_samples.pyz
+            target_path: /app/remote_cli
+
+    - name: Spam After Prepare using Remote
+      job: template-spam-stage
+      path: ${REMOTE_PATH}
+      input:
+        params:
+          params:
+            sleep_time: 0
+
+    - name: parallel parent
+      parallel:
+      - name: Spam Inside Parallel 1
+        job: template-spam-stage
+        path: ${REMOTE_PATH}
+
+      - name: Spam Inside Parallel 2
+        job: template-spam-stage
+        path: ${REMOTE_PATH}
+
+      - name: Spam Inside Parallel 3
+        job: template-spam-stage
+        path: ${REMOTE_PATH}
+
+  jobs:
+    template-spam-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            param_count: 3
+            sleep_time: 0.5
+            sleep_period: 0.1
+            random_sleep: ${ENABLE_RANDOM_SLEEP}
+            print_all_level_logs: true
+        params_secure:
+          systems:
+            qubership:
+              token: ${TEST_TOKEN}
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_0"
+
+  configuration:
+    output:
+      params:
+        RESULT_SPAM: ${RESULT_SPAM}
