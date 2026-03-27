@@ -3,6 +3,7 @@
 .cache
 .venv
 .execution
+.poetry
 dist
 pack
 venv

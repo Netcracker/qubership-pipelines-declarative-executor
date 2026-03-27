@@ -2,12 +2,13 @@
 
 ### General Params
 
-| Name                                                       |          Default Value          | Comment                                                                                              |
-|------------------------------------------------------------|:-------------------------------:|------------------------------------------------------------------------------------------------------|
-| PIPELINES_DECLARATIVE_EXECUTOR_GLOBAL_CONFIGS_PREFIX       |      CUSTOM_GLOBAL_CONFIG       | Env Vars with this prefix will be treated as AtlasConfigs                                            |
-| PIPELINES_DECLARATIVE_EXECUTOR_PYTHON_MODULE_PATH          |              None               | Path to .PYZ or unzipped folder with "Python Module" Commands (automatically set in Docker image)    |
-| PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES_FILE_PATH        |              None               | Path to file with JSON string with Auth Rules config (will be checked here first)                    |
-| PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES                  |              None               | JSON string with Auth Rules config (sample is in [config examples](./config_examples.md#auth_rules)) |
+| Name                                                 |    Default Value     | Comment                                                                                              |
+|------------------------------------------------------|:--------------------:|------------------------------------------------------------------------------------------------------|
+| PIPELINES_DECLARATIVE_EXECUTOR_GLOBAL_CONFIGS_PREFIX | CUSTOM_GLOBAL_CONFIG | Env Vars with this prefix will be treated as AtlasConfigs                                            |
+| PIPELINES_DECLARATIVE_EXECUTOR_PYTHON_MODULE_PATH    |         None         | Path to .PYZ or unzipped folder with "Python Module" Commands (automatically set in Docker image)    |
+| PIPELINES_DECLARATIVE_EXECUTOR_PREPARE_PYTHON_MODULE |         True         | Enables unpacking of archived ".pyz" or ".zip" module in runtime and using unpacked version          |
+| PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES_FILE_PATH  |         None         | Path to file with JSON string with Auth Rules config (will be checked here first)                    |
+| PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES            |         None         | JSON string with Auth Rules config (sample is in [config examples](./config_examples.md#auth_rules)) |
 
 ### Debug Params
 

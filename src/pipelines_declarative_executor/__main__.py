@@ -3,6 +3,7 @@ import sys, asyncio, click, logging
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 from pipelines_declarative_executor.utils.logging_utils import LoggingUtils
 from pipelines_declarative_executor.utils.profiling_utils import ProfilingUtils
+from pipelines_declarative_executor.utils.python_module_utils import PythonModuleUtils
 
 
 @click.group(chain=True)
@@ -20,6 +21,7 @@ def cli():
               help="Console logging level")
 def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is_dry_run: bool, log_level: str):
     setup_cli_logging(log_level)
+    PythonModuleUtils.prepare_python_module()
     logging.info(f'command "RUN" with params:\npipeline_data="{pipeline_data}"\npipeline_vars="{pipeline_vars}"'
                  f'\npipeline_dir="{pipeline_dir}"\nis_dry_run="{is_dry_run}"\nlog_level="{log_level}"')
     with (ProfilingUtils.time_it(), ProfilingUtils.profile_it(), ProfilingUtils.track_peak_usage()):
@@ -34,6 +36,7 @@ def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is
               help="Console logging level")
 def __retry_pipeline(pipeline_dir: str, retry_vars: str, log_level: str):
     setup_cli_logging(log_level)
+    PythonModuleUtils.prepare_python_module()
     logging.info(f'command "RETRY" with params:\npipeline_dir="{pipeline_dir}"\nretry_vars="{retry_vars}"'
                  f'\nlog_level="{log_level}"')
     with (ProfilingUtils.time_it(), ProfilingUtils.profile_it(), ProfilingUtils.track_peak_usage()):
@@ -48,7 +51,7 @@ def __archive_pipeline(pipeline_dir: str, target_path: str, fail_on_missing: boo
     setup_cli_logging(log_env_vars=False)
     logging.info(f'command "ARCHIVE" with params:\npipeline_dir="{pipeline_dir}"\ntarget_path="{target_path}"')
     from pipelines_declarative_executor.utils.archive_utils import ArchiveUtils
-    ArchiveUtils.archive(pipeline_dir, target_path, fail_on_missing)
+    ArchiveUtils.archive(pipeline_dir, target_path, fail_on_missing, use_sops_key=True)
 
 
 @cli.command("unarchive")
@@ -59,7 +62,7 @@ def __unarchive_pipeline(archive_path: str, target_path: str, fail_on_missing: b
     setup_cli_logging(log_env_vars=False)
     logging.info(f'command "UNARCHIVE" with params:\narchive_path="{archive_path}"\ntarget_path="{target_path}"')
     from pipelines_declarative_executor.utils.archive_utils import ArchiveUtils
-    ArchiveUtils.unarchive(archive_path, target_path, fail_on_missing)
+    ArchiveUtils.unarchive(archive_path, target_path, fail_on_missing, use_sops_key=True)
 
 
 def setup_cli_logging(log_level: str = "INFO", log_env_vars: bool = True):

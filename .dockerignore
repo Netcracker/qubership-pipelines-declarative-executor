@@ -1,8 +1,14 @@
 .git
 .github
 docs
-tests
 .gitignore
 .dockerignore
 Dockerfile
 __pycache__
+poetry.lock
+.idea
+.venv
+.poetry
+x_local_debug
+x_local_main_folder
+#tests

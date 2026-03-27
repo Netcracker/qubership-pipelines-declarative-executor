@@ -98,10 +98,23 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    # requirements.txt generation
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Poetry
+      run: pip install poetry
+
+    - name: Export requirements.txt
+      run: poetry self add poetry-plugin-export && poetry export -f requirements.txt --output requirements.txt --without-hashes
+
     - name: Build and Publish Docker image
       uses: netcracker/qubership-workflow-hub/actions/docker-action@b2468074afe9e14270e4d3967376cded733da360 #v2.0.5
       with:
         ref: ${{ github.ref_name }}
+        checkout: false
         custom-image-name: qubership-pipelines-declarative-executor
         platforms: linux/amd64
         tags: latest, v${{ needs.bump-and-publish.outputs.release_version }}

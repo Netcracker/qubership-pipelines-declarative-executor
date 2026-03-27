@@ -3,7 +3,7 @@ import os, logging
 
 class ArchiveUtils:
     @staticmethod
-    def archive(pipeline_dir: str, target_path: str, fail_on_missing: bool = False):
+    def archive(pipeline_dir: str, target_path: str, fail_on_missing: bool = False, use_sops_key: bool = False):
         if not os.path.exists(pipeline_dir):
             logging.warning(f"Trying to archive non-existent path: \"{pipeline_dir}\"")
             if fail_on_missing:
@@ -12,7 +12,7 @@ class ArchiveUtils:
                 return
 
         import subprocess
-        if sops_age_key := os.getenv('SOPS_AGE_KEY'):
+        if use_sops_key and (sops_age_key := os.getenv('SOPS_AGE_KEY')):
             subprocess.run(
                 ['7z', 'a', '-tzip', '-p', target_path, pipeline_dir],
                 input=sops_age_key,
@@ -29,7 +29,7 @@ class ArchiveUtils:
             )
 
     @staticmethod
-    def unarchive(archive_path: str, target_path: str, fail_on_missing: bool = False):
+    def unarchive(archive_path: str, target_path: str, fail_on_missing: bool = False, use_sops_key: bool = False):
         if not os.path.exists(archive_path):
             logging.warning(f"Trying to unarchive non-existent path: \"{archive_path}\"")
             if fail_on_missing:
@@ -38,7 +38,7 @@ class ArchiveUtils:
                 return
 
         import subprocess
-        if sops_age_key := os.getenv('SOPS_AGE_KEY'):
+        if use_sops_key and (sops_age_key := os.getenv('SOPS_AGE_KEY')):
             subprocess.run(
                 ['7z', 'x', f'-o{target_path}', archive_path],
                 input=sops_age_key,
