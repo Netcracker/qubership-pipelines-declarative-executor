@@ -34,7 +34,7 @@ class ResultsCollector:
             tr._tw.write = tee_write
 
     def _parse_stats(self, line: str):
-        if not line.startswith("========================"):
+        if not line.startswith("=================="):
             return
         if 'in' in line:
             duration_part = line.split('in')[-1].strip()

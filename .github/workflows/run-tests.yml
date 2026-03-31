@@ -23,6 +23,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # requirements.txt generation
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Export requirements.txt
+        run: pip install poetry && poetry self add poetry-plugin-export && poetry export -f requirements.txt --output requirements.txt --without-hashes --with test
+
       - name: ">> Build Docker image"
         run: docker build --quiet -t ${{ env.IMAGE_NAME }} .
 

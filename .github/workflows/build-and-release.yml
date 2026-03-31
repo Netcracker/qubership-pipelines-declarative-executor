@@ -104,11 +104,8 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install Poetry
-      run: pip install poetry
-
     - name: Export requirements.txt
-      run: poetry self add poetry-plugin-export && poetry export -f requirements.txt --output requirements.txt --without-hashes
+      run: pip install poetry && poetry self add poetry-plugin-export && poetry export -f requirements.txt --output requirements.txt --without-hashes
 
     - name: Build and Publish Docker image
       uses: netcracker/qubership-workflow-hub/actions/docker-action@b2468074afe9e14270e4d3967376cded733da360 #v2.0.5
