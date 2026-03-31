@@ -59,6 +59,10 @@ pipeline:
 #    - name: Run GitHub Pipeline
 #      job: template-github-run-pipeline
 
+    - name: Validate Dependencies
+      type: ${STAGE_TYPE_PY}
+      command: "validate-dependencies"
+
   jobs:
     template-spam-stage:
       type: ${STAGE_TYPE_PY}

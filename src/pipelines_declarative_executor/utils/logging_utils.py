@@ -54,7 +54,7 @@ class LoggingUtils:
     def log_env_vars():
         logged_vars = {
             "GENERAL": [
-                "GLOBAL_CONFIGS_PREFIX", "PYTHON_MODULE_PATH"
+                "GLOBAL_CONFIGS_PREFIX", "PYTHON_MODULE_PATH", "PREPARE_PYTHON_MODULE"
             ],
             "DEBUG": [
                 "IS_LOCAL_DEBUG", "ENABLE_FULL_EXECUTION_LOG",

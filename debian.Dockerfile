@@ -1,8 +1,8 @@
-FROM python:3.13-alpine
+FROM python:3.11-slim
 LABEL org.opencontainers.image.description="Qubership Pipelines Declarative Executor"
 WORKDIR /app
 
-RUN apk add --no-cache p7zip curl procps git
+RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full curl procps git && rm -rf /var/lib/apt/lists/*
 
 # Install SOPS
 RUN curl -LO https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.linux.amd64 && \
@@ -13,7 +13,7 @@ COPY . .
 RUN pip install --no-compile --no-cache-dir -r requirements.txt
 
 # Install CLI Samples
-RUN curl -L -o quber_cli.pyz https://github.com/Netcracker/qubership-pipelines-cli-command-samples/releases/latest/download/qubership_cli_samples_alpine.pyz
+RUN curl -L -o quber_cli.pyz https://github.com/Netcracker/qubership-pipelines-cli-command-samples/releases/latest/download/qubership_cli_samples.pyz
 
 ENV PATH="/root/.local/bin:${PATH}" \
     PYTHONPATH="/app/src" \
