@@ -1,6 +1,9 @@
+from datetime import datetime
+
 from tabulate import tabulate
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
+from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 
 class ReportSummaryTable:
@@ -46,7 +49,7 @@ class ReportSummaryTable:
                 'name': ReportSummaryTable._get_or_default(stage, 'name'),
                 'id': ReportSummaryTable._get_or_default(stage, 'id'),
                 'status': ReportSummaryTable._get_or_default(stage, 'status'),
-                'time': ReportSummaryTable._get_or_default(stage, 'time'),
+                'time': ReportSummaryTable._get_precise_duration_str(stage.get('startedAt'), stage.get('finishedAt')),
                 'type': ReportSummaryTable._get_or_default(stage, 'type'),
                 'command': stage.get('command', ""),
                 'level': level,
@@ -85,7 +88,7 @@ class ReportSummaryTable:
         lines.append("=" * ReportSummaryTable.TABLE_BORDER_LINE_WIDTH)
         lines.append(f"PIPELINE SUMMARY: {ReportSummaryTable._get_or_default(report, 'name')}")
         lines.append(f"ID: {ReportSummaryTable._get_or_default(report, 'id')}")
-        lines.append(f"Total Duration: {ReportSummaryTable._get_or_default(report, 'time')}")
+        lines.append(f"Total Duration: {ReportSummaryTable._get_precise_duration_str(report.get('startedAt'), report.get('finishedAt'))}")
         lines.append(f"Total Stages: {len(rows)}")
         lines.append(f"Status: {ReportSummaryTable._get_or_default(report, 'status')}")
         if EnvVar.ENABLE_PEAK_RESOURCE_USAGE_PROFILING:
@@ -107,3 +110,18 @@ class ReportSummaryTable:
             f"Peak Memory: {ResourceManager.PEAKS['memory']['value']:.1f} MB (at {ResourceManager.PEAKS['memory']['datetime']})",
             f"Peak CPU: {ResourceManager.PEAKS['cpu']['value']:.1f}% (at {ResourceManager.PEAKS['cpu']['datetime']})",
         ]
+
+    @staticmethod
+    def _get_precise_duration_str(start_time: datetime, finish_time: datetime) -> str:
+        if not (start_time and finish_time):
+            return "N/A"
+        if isinstance(start_time, str):
+            start_time = datetime.fromisoformat(start_time)
+        if isinstance(finish_time, str):
+            finish_time = datetime.fromisoformat(finish_time)
+        duration = StringUtils.get_duration_str(start_time, finish_time)
+        seconds = (finish_time - start_time).total_seconds()
+        if seconds < 60:
+            return f"{duration} ({seconds:.3f}s)"
+        else:
+            return duration

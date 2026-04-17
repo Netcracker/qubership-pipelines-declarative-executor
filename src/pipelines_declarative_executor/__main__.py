@@ -15,7 +15,7 @@ def cli():
 @click.option('--pipeline_data', required=True, type=str, help="Pipeline data (pipeline/config file paths)")
 @click.option('--pipeline_vars', required=False, type=str, help="Pipeline vars with high priority")
 @click.option('--pipeline_dir', required=False, type=str, help="Path to directory where pipeline will be executed")
-@click.option('--is_dry_run', default=False, type=bool, help="Path to directory where pipeline will be executed")
+@click.option('--is_dry_run', default=False, type=bool, help="Dry run mode (no actual execution)")
 @click.option('--log_level', default='INFO', show_default=True,
               type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], case_sensitive=False),
               help="Console logging level")

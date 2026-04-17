@@ -74,14 +74,32 @@ class PipelineOrchestrator:
 
         # pipeline.id = pipeline_data.get('id')
         pipeline.id = str(uuid.uuid4())
-        pipeline.name = pipeline_data.get('name', 'Atlas Pipeline')
+        pipeline.name = vars_obj.calculate_expression(pipeline_data.get('name', 'Atlas Pipeline'))
         pipeline.configuration = pipeline_data.get('configuration', {})
 
-        for stage_index, stage_data in enumerate(pipeline_data.get('stages', [])):
+        flattened_stages = PipelineOrchestrator._flatten_stage_dicts(pipeline_data.get('stages', []))
+        for stage_index, stage_data in enumerate(flattened_stages):
             stage = PipelineOrchestrator._create_stage(stage_index, stage_data, jobs_templates, vars_obj)
             pipeline.stages.append(stage)
 
         return pipeline
+
+    @staticmethod
+    def _flatten_stage_dicts(stage_dicts: list) -> list:
+        flattened = []
+        for stage_dict in stage_dicts:
+            if stages_block := stage_dict.get('stages', []):
+                if any(key in stage_dict for key in ['job', 'type', 'parallel']):
+                    container_name = stage_dict.get('name', 'stages-inside-stage')
+                    logging.warning(f"Flattening \"{container_name}\" - has job/type/parallel properties that will be discarded (will only be used as a container!)")
+                flattened.extend(PipelineOrchestrator._flatten_stage_dicts(stages_block))
+            else:
+                if parallel_block := stage_dict.get('parallel', []):
+                    if isinstance(parallel_block, dict):
+                        parallel_block = list(parallel_block.values())
+                    stage_dict['parallel'] = PipelineOrchestrator._flatten_stage_dicts(parallel_block)
+                flattened.append(stage_dict)
+        return flattened
 
     @staticmethod
     def _create_stage(stage_index: int, stage_data: dict, jobs_templates: dict, vars_obj: PipelineVars) -> Stage:
