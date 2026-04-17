@@ -212,6 +212,23 @@ stages:
 
 If you are collecting output params from parallel stages, be sure to collect them with different names - otherwise, you might end up with stages overwriting same variable in pipeline's context.
 
+### Stages inside stage
+
+Use the `stages` block to group multiple consequent stages logically:
+
+```yaml
+stages:
+  - name: Just a logical container for other stages
+    stages:
+      - name: ....
+        type: ....
+
+      - name: ....
+        type: ....
+```
+
+This container will be flattened during orchestration. If container had any properties on it (e.g. `job`, `type`, `parallel`) - they will all be discarded.
+
 ### Nested Pipelines
 
 Nested pipelines (aka "Atlas Pipeline Triggers") allow you to reuse pipeline definitions and create hierarchical workflows by invoking another pipeline from the current one:

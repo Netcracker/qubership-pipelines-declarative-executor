@@ -1,0 +1,43 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-stages-inside-stages
+
+  stages:
+    - name: Stages Inside Stages Parent 1
+      stages:
+        - name: Spam Cmd 1
+          job: template-py-stage
+
+        - name: Stages Inside Stages Parent 2
+          stages:
+            - name: Spam Cmd 2.1
+              job: template-py-stage
+
+            - name: Spam Cmd 2.2
+              job: template-py-stage
+
+        - name: Spam Cmd 3
+          job: template-py-stage
+
+        - name: parallel parent
+          parallel:
+            - name: Stages Inside Stages Parent 3
+              stages:
+                - name: Spam in parallel 1
+                  job: template-py-stage
+                - name: Spam in parallel 2
+                  job: template-py-stage
+
+            - name: Stages Inside Stages Parent 4
+              stages:
+                - name: Spam in parallel 3
+                  job: template-py-stage
+                - name: Spam in parallel 4
+                  job: template-py-stage
+
+  jobs:
+    template-py-stage:
+      type: PYTHON_MODULE
+      command: "spam"

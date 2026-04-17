@@ -1,4 +1,6 @@
+import os
 import unittest
+from unittest.mock import patch
 
 from pipelines_declarative_executor.model.stage import StageType, ExecutionStatus
 from pipelines_declarative_executor.orchestrator.pipeline_orchestrator import PipelineOrchestrator
@@ -31,6 +33,19 @@ class TestPipelineOrchestrator(unittest.TestCase):
         self.assertEqual(pipeline_execution.pipeline.stages[2].when.condition, "INPUT_KEYWORD == 'correct'")
         self.assertEqual(pipeline_execution.pipeline.stages[2].when.statuses, [ExecutionStatus.FAILED])
 
+    def test_stages_inside_stages_syntax(self):
+        pipeline_execution = PipelineOrchestrator.prepare_pipeline_execution("pipeline_configs/syntax/stages_inside_stages.yaml")
+        self.assertEqual(len(pipeline_execution.pipeline.stages), 5)
+        self.assertEqual(len(pipeline_execution.pipeline.stages[4].nested_parallel_stages), 4)
+
+    def test_global_config_vars_parsed_correctly(self):
+        with open('pipeline_configs/calc/config_calculator.yaml', 'r') as f:
+            global_config_content = f.read()
+        with patch.dict(os.environ, {'CUSTOM_GLOBAL_CONFIG_1': global_config_content}):
+            pipeline_execution = PipelineOrchestrator.prepare_pipeline_execution("pipeline_configs/simple/pipeline_simple.yaml")
+            self.assertEqual(pipeline_execution.vars.all_vars().get("STAGE_TYPE_PY"), "PYTHON_MODULE")
+            self.assertEqual(pipeline_execution.vars.all_vars().get("CALC_ARG1"), 9)
+            self.assertEqual(pipeline_execution.vars.all_vars().get("CALC_ARG2"), 10)
 
 if __name__ == '__main__':
     unittest.main()
