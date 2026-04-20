@@ -39,6 +39,7 @@ class SOPS:
                 f"Missing required SOPS environment variables: {', '.join(missing_vars)}. "
                 "Please set SOPS_AGE_RECIPIENTS (public key for encryption) and SOPS_AGE_KEY (private key for decryption) environment variables."
             )
+        SOPS._test_encryption()
         SOPS._is_init = True
 
     @staticmethod
@@ -104,3 +105,17 @@ class SOPS:
                     os.unlink(output_temp_file)
             except Exception:
                 pass
+
+    @staticmethod
+    def _test_encryption():
+        test_data = {"sops_test_key": "sops_test_value"}
+        test_yaml = yaml.safe_dump(test_data)
+        try:
+            encrypted = SOPS._execute_sops_command(['--encrypt'], test_yaml).strip()
+            decrypted = SOPS._execute_sops_command(['--decrypt'], encrypted).strip()
+            if encrypted == decrypted:
+                raise Exception("Unexpected encryption result!")
+            if yaml.safe_load(decrypted) != test_data:
+                raise Exception("Round-trip data mismatch")
+        except Exception as e:
+            raise SopsException(f"SOPS encryption test failed. Please verify your age keys. Error: {e}")
