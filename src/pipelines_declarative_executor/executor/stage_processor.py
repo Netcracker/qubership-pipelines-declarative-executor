@@ -161,11 +161,11 @@ class StageProcessor:
         header = ColorUtils.with_color(message=f" Stage Output from {stage.logged_name()}", color=header_color)
         with LoggingUtils.collapsible_section(header=header, stage=stage):
             if stdout and EnvVar.ENABLE_MODULE_STDOUT_LOG:
-                normalized_output = StringUtils.normalize_line_endings(stdout.decode(errors="ignore").strip())
+                normalized_output = StringUtils.indent_lines(StringUtils.normalize_line_endings(stdout.decode(errors="ignore").strip()))
                 execution.logger.info(f'Shell STDOUT for {stage.logged_name()} (return_code={process.returncode}):\n{normalized_output}')
             if stderr or process.returncode != expected_return_code:
                 if stderr:
-                    normalized_output = StringUtils.normalize_line_endings(stderr.decode(errors="ignore").strip())
+                    normalized_output = StringUtils.indent_lines(StringUtils.normalize_line_endings(stderr.decode(errors="ignore").strip()))
                     execution.logger.error(f'Shell STDERR for {stage.logged_name()} (return_code={process.returncode}):\n{normalized_output}')
                 raise Exception(f"Error during {stage.logged_name()} - \"{logged_cmd_name}\"")
 

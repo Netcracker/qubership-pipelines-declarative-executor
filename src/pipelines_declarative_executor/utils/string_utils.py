@@ -135,3 +135,24 @@ class StringUtils:
         if value is None or value == '':
             return ""
         return Constants.DEFAULT_MASKED_VALUE
+
+    @staticmethod
+    def indent_lines(text: str, indent: str = Constants.STAGE_OUTPUT_LOG_INDENT) -> str:
+        if not text:
+            return text
+        return "\n".join(indent + line for line in text.splitlines())
+
+    @staticmethod
+    def format_pipeline_header(text: str, width: int = 120, indent: str = "    ") -> str:
+        if not text:
+            return text
+        top_border = "┌" + "─" * width
+        bottom_border = "└" + "─" * width
+        prefix = "│ "
+
+        lines = text.splitlines()
+        result = [indent + top_border]
+        for line in lines:
+            result.append(indent + prefix + line)
+        result.append(indent + bottom_border)
+        return "\n".join(result)

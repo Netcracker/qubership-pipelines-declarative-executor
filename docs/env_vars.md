@@ -18,6 +18,7 @@
 | PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_MODULE_STDOUT_LOG    |     True      | Enables logging of invoked shell commands stdout (including "Python Modules")             |
 | PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_DEBUG_DATA_COLLECTOR |     True      | Enables debug data collection after pipeline execution (available in 'x_debug' directory) |
 | PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_COLLAPSIBLE_CI_LOGS  |     True      | Hides command's stdout under GitHub/GitLab specific collapsible sections                  |
+| PIPELINES_DECLARATIVE_EXECUTOR_USE_COMPACT_LOGGED_NAMES    |     True      | Logs pipeline/stage names without IDs and UUIDs (still prints last 8 characters of UUID)  |
 
 ### Profiling Params
 

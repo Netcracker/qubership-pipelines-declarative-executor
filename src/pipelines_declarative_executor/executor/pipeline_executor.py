@@ -12,6 +12,7 @@ from pipelines_declarative_executor.report.report_summary_table import ReportSum
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
 from pipelines_declarative_executor.utils.debug_data_collector import DebugDataCollector
 from pipelines_declarative_executor.utils.logging_utils import LoggingUtils
+from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 
 class PipelineExecutor:
@@ -55,9 +56,11 @@ class PipelineExecutor:
 
     @staticmethod
     def _execution_start(execution: PipelineExecution):
-        execution.logger.info(f"Pipeline {execution.pipeline.logged_name()} execution started!"
-                              f"{' (DRY RUN)' if execution.is_dry_run else ''}"
-                              f"{' (RETRY)' if execution.is_retry else ''}")
+        log_msg = (f"Execution Started"
+                   f"{' (DRY RUN)' if execution.is_dry_run else ''}"
+                   f"{' (RETRY)' if execution.is_retry else ''}"
+                   f" - {execution.pipeline.logged_name()}")
+        execution.logger.info("\n" + StringUtils.format_pipeline_header(log_msg))
         execution.status = ExecutionStatus.IN_PROGRESS
         execution.start_time = datetime.now()
         execution.store_state()
@@ -68,7 +71,8 @@ class PipelineExecutor:
         execution.code = CommonUtils.calculate_final_code(execution)
         execution.finish_time = datetime.now()
         execution.store_state()
-        execution.logger.info(f"Pipeline {execution.pipeline.logged_name()} execution finished - {execution.status}")
+        log_msg = f"Execution Finished - {execution.status} - {execution.pipeline.logged_name()}"
+        execution.logger.info("\n" + StringUtils.format_pipeline_header(log_msg))
         if not execution.is_nested:
             execution.logger.info(f"\n{ReportSummaryTable.generate_summary_table(execution=execution)}")
             DebugDataCollector.collect_debug_data(execution=execution)
