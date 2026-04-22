@@ -5,7 +5,7 @@ from requests import Response
 from pipelines_declarative_executor.executor.params_processor import ParamsProcessor
 from pipelines_declarative_executor.model.exceptions import SopsException
 from pipelines_declarative_executor.model.pipeline import PipelineExecution, PipelineVars, Pipeline, Stage
-from pipelines_declarative_executor.model.stage import ExecutionStatus, StageType
+from pipelines_declarative_executor.model.stage import ExecutionStatus, StageType, VALID_STAGE_TYPES
 from pipelines_declarative_executor.utils.auth_utils import AuthConfig
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
@@ -72,7 +72,6 @@ class PipelineOrchestrator:
         pipeline_data = pipeline_dict.get('pipeline', {})
         jobs_templates = pipeline_data.get('jobs', {})
 
-        # pipeline.id = pipeline_data.get('id')
         pipeline.id = str(uuid.uuid4())
         pipeline.name = vars_obj.calculate_expression(pipeline_data.get('name', 'Atlas Pipeline'))
         pipeline.configuration = pipeline_data.get('configuration', {})
@@ -140,6 +139,9 @@ class PipelineOrchestrator:
                 nested_stage = PipelineOrchestrator._create_stage(nested_stage_index, nested_stage_data,
                                                                   jobs_templates, vars_obj)
                 stage.nested_parallel_stages.append(nested_stage)
+
+        if stage.type not in VALID_STAGE_TYPES:
+            raise Exception(f"Unknown stage type: {stage.type} (in stage {stage.name} - {stage.id})")
 
         return stage
 

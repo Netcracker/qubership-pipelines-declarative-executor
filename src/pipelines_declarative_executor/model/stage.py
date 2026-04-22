@@ -40,6 +40,7 @@ class StageType(StrEnum):
 
 
 COMPLEX_TYPES = [StageType.PARALLEL_BLOCK, StageType.ATLAS_PIPELINE_TRIGGER]
+VALID_STAGE_TYPES = {st.value for st in StageType}
 
 
 @dataclass
