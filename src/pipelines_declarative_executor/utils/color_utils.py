@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 
 class ColorUtils:
 
@@ -20,3 +22,22 @@ class ColorUtils:
             return f"{ColorUtils.COLOR_CODES[color]}{message}{ColorUtils.COLOR_CODES['RESET']}"
         else:
             return message
+
+
+class ColoredFormatter(logging.Formatter):
+
+    COLOR_CODES = {
+        'DEBUG': ColorUtils.COLOR_CODES['BLUE'],
+        'INFO': ColorUtils.COLOR_CODES['GREEN'],
+        'WARNING': ColorUtils.COLOR_CODES['ORANGE'],
+        'ERROR': ColorUtils.COLOR_CODES['RED'],
+        'CRITICAL': ColorUtils.COLOR_CODES['VIOLET'],
+        'RESET': ColorUtils.COLOR_CODES['RESET'],
+    }
+
+    def format(self, record):
+        record = logging.makeLogRecord(record.__dict__)
+        levelname = record.levelname
+        if levelname in self.COLOR_CODES:
+            record.levelname = f"{self.COLOR_CODES[levelname]}{levelname}{self.COLOR_CODES['RESET']}"
+        return super().format(record)

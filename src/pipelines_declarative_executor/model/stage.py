@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
+
+from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 
@@ -62,7 +64,11 @@ class Stage:
     custom_data: dict = field(default_factory=dict)
 
     def logged_name(self) -> str:
-        return f"\"{self.name}\" (id={self.id}, uuid={self.uuid})"
+        if EnvVar.USE_COMPACT_LOGGED_NAMES:
+            compact_uuid = self.uuid[-8:]
+            return f'"{self.name}" (...{compact_uuid})'
+        else:
+            return f'"{self.name}" (id={self.id}, uuid={self.uuid})'
 
     def logged_time(self) -> str:
         if not self.start_time or not self.finish_time:

@@ -10,6 +10,7 @@ from pathlib import Path
 from pipelines_declarative_executor.model.stage import Stage, ExecutionStatus
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
 from pipelines_declarative_executor.utils.constants import Constants
+from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 
@@ -21,7 +22,11 @@ class Pipeline:
     configuration: dict = field(default_factory=dict)
 
     def logged_name(self) -> str:
-        return f"\"{self.name}\" (id={self.id})"
+        if EnvVar.USE_COMPACT_LOGGED_NAMES:
+            compact_uuid = self.id[-8:]
+            return f'"{self.name}" (...{compact_uuid})'
+        else:
+            return f'"{self.name}" (id={self.id})'
 
 
 @dataclass

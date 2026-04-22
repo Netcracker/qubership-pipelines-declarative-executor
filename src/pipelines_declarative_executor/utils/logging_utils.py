@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from logging import Logger
 from pathlib import Path
 
+from pipelines_declarative_executor.utils.color_utils import ColoredFormatter
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 
 
@@ -23,7 +24,10 @@ class LoggingUtils:
 
         console_handler = logging.StreamHandler(stream=sys.stdout)
         console_handler.setLevel(LoggingUtils.CONSOLE_LOG_LEVEL)
-        console_handler.setFormatter(logging.Formatter(LoggingUtils.DEFAULT_FORMAT))
+        if EnvVar.NO_RICH:
+            console_handler.setFormatter(logging.Formatter(LoggingUtils.DEFAULT_FORMAT))
+        else:
+            console_handler.setFormatter(ColoredFormatter(LoggingUtils.DEFAULT_FORMAT))
         root_logger.addHandler(console_handler)
 
         if EnvVar.ENABLE_FULL_EXECUTION_LOG:
@@ -58,7 +62,8 @@ class LoggingUtils:
             ],
             "DEBUG": [
                 "IS_LOCAL_DEBUG", "ENABLE_FULL_EXECUTION_LOG",
-                "ENABLE_MODULE_STDOUT_LOG", "ENABLE_DEBUG_DATA_COLLECTOR"
+                "ENABLE_MODULE_STDOUT_LOG", "ENABLE_DEBUG_DATA_COLLECTOR",
+                "ENABLE_COLLAPSIBLE_CI_LOGS", "USE_COMPACT_LOGGED_NAMES",
             ],
             "REMOTE REPORT": [
                 "REPORT_SEND_MODE", "REPORT_SEND_INTERVAL", "REPORT_STATUS_POLL_INTERVAL",
@@ -80,7 +85,7 @@ class LoggingUtils:
                 "ENABLE_PEAK_RESOURCE_USAGE_PROFILING", "PEAK_RESOURCE_USAGE_PROFILING_INTERVAL"
             ],
             "WRAPPER VARS": [
-                "EXECUTION_URL", "EXECUTION_USER", "EXECUTION_EMAIL"
+                "EXECUTION_URL", "EXECUTION_USER", "EXECUTION_EMAIL", "NO_RICH"
             ],
         }
         env_info = ""

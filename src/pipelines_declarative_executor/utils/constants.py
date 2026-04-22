@@ -18,6 +18,7 @@ class Constants:
     PIPELINE_REPORT_FOR_REPORT_STAGE_FILE_NAME = "pipeline_report.json"
 
     DEFAULT_MASKED_VALUE = "[MASKED]"
+    STAGE_OUTPUT_LOG_INDENT = "    |   "
 
 
 class StatusCodes:
