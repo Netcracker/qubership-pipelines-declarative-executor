@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 from requests import Response
 from pipelines_declarative_executor.executor.params_processor import ParamsProcessor
 from pipelines_declarative_executor.model.exceptions import SopsException
+from pipelines_declarative_executor.model.orchestrator import AtlasMetaFile, PipelineTemplate
 from pipelines_declarative_executor.model.pipeline import PipelineExecution, PipelineVars, Pipeline, Stage
 from pipelines_declarative_executor.model.stage import ExecutionStatus, StageType, VALID_STAGE_TYPES
 from pipelines_declarative_executor.utils.auth_utils import AuthConfig
@@ -16,65 +17,100 @@ from pipelines_declarative_executor.utils.string_utils import StringUtils
 class PipelineOrchestrator:
     @staticmethod
     def prepare_pipeline_execution(pipeline_data: str, pipeline_vars: str = None) -> PipelineExecution:
-        pipeline_execution = PipelineExecution(inputs={
-            "pipeline_data": pipeline_data,
-            "pipeline_vars": pipeline_vars,
-        })
+        pipeline_execution = PipelineExecution(inputs={"pipeline_data": pipeline_data, "pipeline_vars": pipeline_vars})
         vars_obj = PipelineVars()
-        pipeline_dict, pipeline_path = None, None
+        merged_template = PipelineTemplate()
+        last_pipeline = None
 
         if pipeline_data:
-            file_paths = StringUtils.trim_lines(pipeline_data)
-            for file_path in file_paths:
+            for file_path in StringUtils.trim_lines(pipeline_data):
                 try:
-                    data, is_secure, is_remote = PipelineOrchestrator._load_yaml_content(file_path=file_path)
-                    kind = data.get('kind')
+                    meta_file = PipelineOrchestrator._load_yaml_content(file_path=file_path)
+                    kind = meta_file.data.get('kind')
                     if kind == 'AtlasConfig':
-                        config_params = {k: v for k, v in data.items() if k not in ('apiVersion', 'kind')}
-                        for path, value in CommonUtils.traverse(config_params):
-                            ParamsProcessor.set_config_var(vars_obj, path[-1], value, file_path, is_secure, is_remote)
+                        PipelineOrchestrator._process_atlas_config(vars_obj, meta_file)
                     elif kind == 'AtlasPipeline':
-                        if pipeline_dict:
-                            logging.warning(f"AtlasPipeline config already parsed from \"{pipeline_path}\", will ignore \"{file_path}\" - only one pipeline should be present")
-                        else:
-                            pipeline_dict, pipeline_path = data, file_path
-                            if pipeline_embedded_vars := pipeline_dict.get('pipeline', {}).get('vars'):
-                                ParamsProcessor.set_pipeline_vars(vars_obj, pipeline_embedded_vars, file_path, is_secure, is_remote)
+                        if last_pipeline:
+                            logging.warning(f"AtlasPipeline from \"{last_pipeline.file_path}\" will be ignored - will use last one found in PIPELINE_DATA")
+                        last_pipeline = meta_file
+                    elif kind == 'AtlasPipelineTemplate':
+                        PipelineOrchestrator._process_pipeline_template(merged_template, vars_obj, meta_file)
                     else:
-                        logging.warning(f"File {file_path} has unsupported kind: {kind}")
+                        logging.warning(f"File {meta_file.file_path} has unsupported kind: {kind}")
                 except SopsException as e:
                     PipelineOrchestrator._process_sops_exception(e)
                 except Exception as e:
                     logging.warning(f"Error processing file {file_path}: {str(e)}")
 
+        if not last_pipeline:
+            raise Exception("No 'AtlasPipeline' present in 'pipeline_data'!")
+
+        if pipeline_embedded_vars := last_pipeline.data.get('pipeline', {}).get('vars'):
+            ParamsProcessor.set_pipeline_vars(vars_obj, pipeline_embedded_vars, last_pipeline.file_path, last_pipeline.is_secure, last_pipeline.is_remote)
+
         if pipeline_vars:
-            vars_list = StringUtils.trim_lines(pipeline_vars)
-            for var in vars_list:
-                if '=' in var:
-                    key, value = var.split('=', 1)
-                    ParamsProcessor.set_override_var(vars_obj, key.strip(), value.strip())
+            PipelineOrchestrator._process_pipeline_vars(vars_obj, pipeline_vars)
 
         PipelineOrchestrator._process_global_configs(vars_obj)
-
-        if not pipeline_dict:
-            raise Exception("No 'AtlasPipeline' present in 'pipeline_data'!")
 
         if EnvVar.ENCRYPT_OUTPUT_PARAMS:
             SOPS.init()
 
-        pipeline_execution.pipeline = PipelineOrchestrator._create_pipeline_from_dict(pipeline_dict, vars_obj)
+        pipeline_execution.pipeline = PipelineOrchestrator._create_pipeline_from_dict(last_pipeline.data, vars_obj, merged_template)
         pipeline_execution.vars = vars_obj
         return pipeline_execution
 
     @staticmethod
-    def _create_pipeline_from_dict(pipeline_dict: dict, vars_obj: PipelineVars) -> Pipeline:
+    def _process_atlas_config(vars_obj: PipelineVars, config: AtlasMetaFile):
+        config_params = {k: v for k, v in config.data.items() if k not in ('apiVersion', 'kind')}
+        for path, value in CommonUtils.traverse(config_params):
+            ParamsProcessor.set_config_var(vars_obj, path[-1], value, config.file_path, config.is_secure, config.is_remote)
+
+    @staticmethod
+    def _process_pipeline_template(merged_template: PipelineTemplate, vars_obj: PipelineVars, template: AtlasMetaFile):
+        if template_vars := template.data.get('pipeline', {}).get('vars'):
+            ParamsProcessor.set_pipeline_vars(vars_obj, template_vars, template.file_path, template.is_secure, template.is_remote)
+        if template_config := template.data.get('pipeline', {}).get('configuration'):
+            merged_template.configuration.update(template_config)
+        if template_jobs := template.data.get('pipeline', {}).get('jobs'):
+            merged_template.job_templates.update(template_jobs)
+
+    @staticmethod
+    def _process_pipeline_vars(vars_obj: PipelineVars, pipeline_vars: str):
+        vars_list = StringUtils.trim_lines(pipeline_vars)
+        for var in vars_list:
+            if '=' in var:
+                key, value = var.split('=', 1)
+                ParamsProcessor.set_override_var(vars_obj, key.strip(), value.strip())
+
+    @staticmethod
+    def _process_global_configs(vars_obj: PipelineVars):
+        global_configs_prefix = EnvVar.GLOBAL_CONFIGS_PREFIX
+        for env_key, env_value in os.environ.items():
+            if env_key.startswith(global_configs_prefix):
+                try:
+                    data, is_secure = SopsUtils.load_and_decrypt_yaml(env_value)
+                    kind = data.get('kind')
+                    if kind != 'AtlasConfig':
+                        logging.warning(f"Global Config in env var '{env_key}' has unsupported kind: {kind}")
+                        continue
+                    config_params = {k: v for k, v in data.items() if k not in ('apiVersion', 'kind')}
+                    for path, value in CommonUtils.traverse(config_params):
+                        ParamsProcessor.set_global_config_var(vars_obj, path[-1], value, env_key, is_secure)
+                except SopsException as e:
+                    PipelineOrchestrator._process_sops_exception(e)
+                except Exception as e:
+                    logging.warning(f"Error loading Global Config YAML from '{env_key}' env var: {str(e)}")
+
+    @staticmethod
+    def _create_pipeline_from_dict(pipeline_dict: dict, vars_obj: PipelineVars, merged_template: PipelineTemplate) -> Pipeline:
         pipeline = Pipeline()
         pipeline_data = pipeline_dict.get('pipeline', {})
-        jobs_templates = pipeline_data.get('jobs', {})
+        jobs_templates = {**merged_template.job_templates, **pipeline_data.get('jobs', {})}
 
         pipeline.id = str(uuid.uuid4())
         pipeline.name = vars_obj.calculate_expression(pipeline_data.get('name', 'Atlas Pipeline'))
-        pipeline.configuration = pipeline_data.get('configuration', {})
+        pipeline.configuration = {**merged_template.configuration, **pipeline_data.get('configuration', {})}
 
         flattened_stages = PipelineOrchestrator._flatten_stage_dicts(pipeline_data.get('stages', []))
         for stage_index, stage_data in enumerate(flattened_stages):
@@ -105,7 +141,10 @@ class PipelineOrchestrator:
         stage = Stage()
         job_template = {}
         if 'job' in stage_data:
-            job_template = jobs_templates.get(vars_obj.calculate_expression(stage_data['job']), {})
+            template_name = vars_obj.calculate_expression(stage_data['job'])
+            job_template = jobs_templates.get(template_name)
+            if not job_template:
+                raise Exception(f"Missing job-template requested: {template_name}")
         merged_stage_data = CommonUtils.recursive_merge(job_template, stage_data)
 
         for field_name in ['name', 'type', 'path', 'command']:
@@ -136,8 +175,7 @@ class PipelineOrchestrator:
             stage.nested_parallel_stages = []
             stage.type = StageType.PARALLEL_BLOCK
             for nested_stage_index, nested_stage_data in enumerate(parallel_block):
-                nested_stage = PipelineOrchestrator._create_stage(nested_stage_index, nested_stage_data,
-                                                                  jobs_templates, vars_obj)
+                nested_stage = PipelineOrchestrator._create_stage(nested_stage_index, nested_stage_data, jobs_templates, vars_obj)
                 stage.nested_parallel_stages.append(nested_stage)
 
         if stage.type not in VALID_STAGE_TYPES:
@@ -146,36 +184,17 @@ class PipelineOrchestrator:
         return stage
 
     @staticmethod
-    def _process_global_configs(vars_obj: PipelineVars):
-        global_configs_prefix = EnvVar.GLOBAL_CONFIGS_PREFIX
-        for env_key, env_value in os.environ.items():
-            if env_key.startswith(global_configs_prefix):
-                try:
-                    data, is_secure = SopsUtils.load_and_decrypt_yaml(env_value)
-                    kind = data.get('kind')
-                    if kind != 'AtlasConfig':
-                        logging.warning(f"Global Config in env var '{env_key}' has unsupported kind: {kind}")
-                        continue
-                    config_params = {k: v for k, v in data.items() if k not in ('apiVersion', 'kind')}
-                    for path, value in CommonUtils.traverse(config_params):
-                        ParamsProcessor.set_global_config_var(vars_obj, path[-1], value, env_key, is_secure)
-                except SopsException as e:
-                    PipelineOrchestrator._process_sops_exception(e)
-                except Exception as e:
-                    logging.warning(f"Error loading Global Config YAML from '{env_key}' env var: {str(e)}")
-
-    @staticmethod
-    def _load_yaml_content(file_path: str) -> tuple[dict, bool, bool]:  # data, is_secure, is_remote
+    def _load_yaml_content(file_path: str) -> AtlasMetaFile:
         try:
             url_components = urlparse(file_path)
             if url_components.scheme in ('http', 'https'):
                 response = PipelineOrchestrator._get_response_from_url(file_path, AuthConfig().get_auth_for_url(file_path))
                 data, is_secure = SopsUtils.load_and_decrypt_yaml(response.text)
-                return data, is_secure, True
+                return AtlasMetaFile(data, file_path, is_secure, True)
             else:
                 with open(file_path, 'r') as f:
                     data, is_secure = SopsUtils.load_and_decrypt_yaml(f.read())
-                    return data, is_secure, False
+                    return AtlasMetaFile(data, file_path, is_secure, False)
         except Exception as e:
             logging.warning(f"Error loading YAML from {file_path}: {str(e)}")
             raise

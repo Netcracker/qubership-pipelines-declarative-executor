@@ -1,0 +1,44 @@
+kind: AtlasPipelineTemplate
+apiVersion: v2
+
+pipeline:
+  vars:
+    TEST_TEMPLATE_VAR: value_from_template2
+    TEST_PIPELINE_VAR: value_from_template2
+    VAR_FROM_SIMPLE_CONFIG: 67
+
+  jobs:
+    template-spam-no-sleep-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            param_count: 3
+            sleep_time: 0
+            sleep_period: 0.1
+            random_sleep: false
+            print_all_level_logs: false
+            some_param_from_template2: true
+
+    template-spam-from-template2-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            sleep_time: 1
+            some_param_from_template2: true
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_0"
+
+  configuration:
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+    output:
+      params:
+        params:
+          RESULT_SPAMUS: ${RESULT_SPAM}

@@ -64,7 +64,7 @@ class StageProcessor:
             raise
         except Exception as e:
             stage.status = ExecutionStatus.FAILED
-            execution.logger.error(f"Something went wrong during stage {stage.logged_name()} execution: [{type(e)} - {str(e)}]")
+            execution.logger.error(f"Exception during stage {stage.logged_name()} execution: [{type(e)} - {str(e)}]")
             raise StageExecutionException(f"Stage {stage.name} failed")
         finally:
             StageProcessor._post_process(execution, stage)

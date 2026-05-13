@@ -1,0 +1,6 @@
+kind: AtlasConfig
+apiVersion: v1
+
+global:
+  vars:
+    VAR_FROM_SIMPLE_CONFIG: 56

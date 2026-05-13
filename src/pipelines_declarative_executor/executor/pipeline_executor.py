@@ -49,7 +49,7 @@ class PipelineExecutor:
         except asyncio.CancelledError:
             execution.logger.warning("Stages processing cancelled!")
         except Exception as e:
-            execution.logger.error(f"Something went wrong during Pipeline execution: [{type(e)} - {str(e)}]")
+            execution.logger.error(f"Exception during Pipeline execution: [{type(e)} - {str(e)}]")
         finally:
             PipelineExecutor._execution_finish(execution)
             return execution

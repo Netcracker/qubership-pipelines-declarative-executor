@@ -1,0 +1,38 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-with-templates
+  name: Pipeline That Uses Templates
+  vars:
+    TEST_TOKEN: qwerty12345
+    TEST_PIPELINE_VAR: value_from_pipeline
+
+  stages:
+    - name: Spam Cmd 1
+      job: template-spam-stage
+
+    - name: Spam Cmd No Sleep 2
+      job: template-spam-no-sleep-stage
+
+    - name: Spam Cmd 3
+      job: template-spam-from-template2-stage
+
+  jobs:
+    template-spam-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            sleep_time: 3
+            some_param_from_pipeline: true
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_0"
+
+  configuration:
+    output:
+      params:
+        params:
+          RESULT_SPAM: ${RESULT_SPAM}
