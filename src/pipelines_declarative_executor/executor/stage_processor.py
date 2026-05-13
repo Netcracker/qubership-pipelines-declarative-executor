@@ -109,7 +109,7 @@ class StageProcessor:
         if not await ResourceManager.acquire():
             raise Exception(f"Resource acquisition timeout for stage {stage.logged_name()}")
 
-        process, stdout, stderr = None, None, None
+        process, stdout, stderr, profiling_task, metrics = None, None, None, None, None
         try:
             process = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             if EnvVar.ENABLE_STAGE_RESOURCE_USAGE_PROFILING and process.pid:
@@ -148,12 +148,13 @@ class StageProcessor:
             except asyncio.CancelledError:
                 pass
 
-        if metrics['samples'] > 0:
-            metrics['avg_cpu'] = metrics['total_cpu'] / metrics['samples']
-        stage.custom_data.update({
-            "avg_cpu": f"{metrics['avg_cpu']:.1f}%",
-            "peak_memory_mb": f"{metrics['peak_memory_mb']:.1f} MB"
-        })
+        if metrics:
+            if metrics['samples'] > 0:
+                metrics['avg_cpu'] = metrics['total_cpu'] / metrics['samples']
+            stage.custom_data.update({
+                "avg_cpu": f"{metrics['avg_cpu']:.1f}%",
+                "peak_memory_mb": f"{metrics['peak_memory_mb']:.1f} MB"
+            })
 
     @staticmethod
     async def _run_shell_command_log(stage: Stage, execution: PipelineExecution, process, stdout, stderr, expected_return_code: int, logged_cmd_name: str):
