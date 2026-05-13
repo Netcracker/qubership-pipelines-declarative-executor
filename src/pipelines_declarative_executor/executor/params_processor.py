@@ -23,7 +23,7 @@ class ParamsProcessor:
     def set_pipeline_vars(vars_storage: PipelineVars, pipeline_vars: dict, source_path: str,
                           is_secure: bool = False, is_remote: bool = False) -> None:
         for key, value in pipeline_vars.items():
-            if key not in vars_storage.vars_source:  # to avoid overwriting CONFIG vars with ones from PIPELINE
+            if key not in vars_storage.vars_config:  # to avoid overwriting CONFIG vars with ones from PIPELINE/TEMPLATE
                 ParamsProcessor._set_var(vars_storage, 'vars_pipeline', key, value,
                                          ParamsProcessor.file_source(source_path, is_remote), is_secure)
 

@@ -1,0 +1,64 @@
+kind: AtlasPipelineTemplate
+apiVersion: v2
+
+pipeline:
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    STAGE_TYPE_NESTED: ATLAS_PIPELINE_TRIGGER
+    TEST_TOKEN: qwerty123
+    ENABLE_RANDOM_SLEEP: true
+    TEST_TEMPLATE_VAR: value_from_template1
+    TEST_PIPELINE_VAR: value_from_template1
+
+  jobs:
+    template-spam-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            param_count: 3
+            sleep_time: 0.5
+            sleep_period: 0.1
+            random_sleep: ${ENABLE_RANDOM_SLEEP}
+            print_all_level_logs: true
+        params_secure:
+          systems:
+            qubership:
+              token: ${TEST_TOKEN}
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_0"
+
+    template-spam-no-sleep-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            param_count: 3
+            sleep_time: 0
+            sleep_period: 0.1
+            random_sleep: false
+            print_all_level_logs: false
+            some_param_from_template1: true
+
+    template-system-load-test:
+      type: ${STAGE_TYPE_PY}
+      command: "system-load-test"
+      input:
+        params:
+          params:
+            cpu:
+              run_test: true
+              load: 1
+              duration: 2
+            ram:
+              run_test: true
+              size_mb: 100
+              duration: 2
+              chunks: 2
+
+  configuration:
+    retry:
+      limit: 3

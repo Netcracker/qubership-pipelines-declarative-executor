@@ -134,5 +134,5 @@ class ReportCollector:
                     return CommonUtils.load_yaml_file(report_path)
             except Exception as e:
                 import logging
-                logging.warning(f"Something went wrong when collecting moduleReport from \"{stage.id}\" - [{type(e)} - {str(e)}]")
+                logging.warning(f"Exception when collecting moduleReport from \"{stage.id}\" - [{type(e)} - {str(e)}]")
         return None

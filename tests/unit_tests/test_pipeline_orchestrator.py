@@ -47,5 +47,36 @@ class TestPipelineOrchestrator(unittest.TestCase):
             self.assertEqual(pipeline_execution.vars.all_vars().get("CALC_ARG1"), 9)
             self.assertEqual(pipeline_execution.vars.all_vars().get("CALC_ARG2"), 10)
 
+    def test_pipeline_data_load_order(self):
+        pipeline_execution = PipelineOrchestrator.prepare_pipeline_execution("pipeline_configs/syntax/stages_inside_stages.yaml;pipeline_configs/simple/pipeline_simple.yaml")
+        self.assertEqual("Simple Pipeline", pipeline_execution.pipeline.name)
+        self.assertEqual(len(pipeline_execution.pipeline.stages), 1)
+
+    def test_templates_order_priority(self):
+        pipeline_execution = PipelineOrchestrator.prepare_pipeline_execution(
+            "pipeline_configs/simple/config_simple.yaml;"
+            "pipeline_configs/templates/common_jobs_template.yaml;"
+            "pipeline_configs/templates/test_template.yaml;"
+            "pipeline_configs/templates/pipeline_using_templates.yaml;"
+        )
+
+        # pipeline.vars merge test
+        self.assertEqual(pipeline_execution.vars.all_vars().get("TEST_PIPELINE_VAR"), "value_from_pipeline")
+        self.assertEqual(pipeline_execution.vars.all_vars().get("TEST_TEMPLATE_VAR"), "value_from_template2")
+        self.assertEqual(pipeline_execution.vars.all_vars().get("VAR_FROM_SIMPLE_CONFIG"), 56)
+
+        # pipeline.jobs merge test
+        self.assertEqual(len(pipeline_execution.pipeline.stages), 3)
+        self.assertEqual(pipeline_execution.pipeline.stages[0].input.get("params", {}).get("params", {}).get("some_param_from_pipeline"), True)
+        self.assertEqual(pipeline_execution.pipeline.stages[1].input.get("params", {}).get("params", {}).get("some_param_from_template2"), True)
+        self.assertEqual(pipeline_execution.pipeline.stages[1].input.get("params", {}).get("params", {}).get("some_param_from_template1"), None)
+        self.assertEqual(pipeline_execution.pipeline.stages[2].input.get("params", {}).get("params", {}).get("some_param_from_template2"), True)
+
+        # pipeline.configuration merge test
+        self.assertEqual(pipeline_execution.pipeline.configuration.get("retry", {}).get("limit"), 5)
+        self.assertEqual(pipeline_execution.pipeline.configuration.get("output", {}).get("params", {}).get("params", {}).get("RESULT_SPAM"), "${RESULT_SPAM}")
+        self.assertEqual(pipeline_execution.pipeline.configuration.get("output", {}).get("params", {}).get("params", {}).get("RESULT_SPAMUS"), None)
+
+
 if __name__ == '__main__':
     unittest.main()
