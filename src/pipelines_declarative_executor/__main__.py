@@ -4,6 +4,7 @@ from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 from pipelines_declarative_executor.utils.logging_utils import LoggingUtils
 from pipelines_declarative_executor.utils.profiling_utils import ProfilingUtils
 from pipelines_declarative_executor.utils.python_module_utils import PythonModuleUtils
+from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 
 @click.group(chain=True)
@@ -22,8 +23,8 @@ def cli():
 def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is_dry_run: bool, log_level: str):
     setup_cli_logging(log_level)
     PythonModuleUtils.prepare_python_module()
-    logging.info(f'command "RUN" with params:\npipeline_data="{pipeline_data}"\npipeline_vars="{pipeline_vars}"'
-                 f'\npipeline_dir="{pipeline_dir}"\nis_dry_run="{is_dry_run}"\nlog_level="{log_level}"')
+    logging.info(f'command "RUN" with params:\n{format_param("PIPELINE_DATA", pipeline_data)}\n{format_param("PIPELINE_VARS", pipeline_vars)}'
+                 f'\nPIPELINE_DIR="{pipeline_dir}"\nIS_DRY_RUN="{is_dry_run}"\nLOG_LEVEL="{log_level}"')
     with (ProfilingUtils.time_it(), ProfilingUtils.profile_it(), ProfilingUtils.track_peak_usage()):
         asyncio.run(create_and_run_pipeline(pipeline_data, pipeline_vars, pipeline_dir, is_dry_run))
 
@@ -37,8 +38,8 @@ def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is
 def __retry_pipeline(pipeline_dir: str, retry_vars: str, log_level: str):
     setup_cli_logging(log_level)
     PythonModuleUtils.prepare_python_module()
-    logging.info(f'command "RETRY" with params:\npipeline_dir="{pipeline_dir}"\nretry_vars="{retry_vars}"'
-                 f'\nlog_level="{log_level}"')
+    logging.info(f'command "RETRY" with params:\nPIPELINE_DIR="{pipeline_dir}"\n{format_param("RETRY_VARS", retry_vars)}'
+                 f'\nLOG_LEVEL="{log_level}"')
     with (ProfilingUtils.time_it(), ProfilingUtils.profile_it(), ProfilingUtils.track_peak_usage()):
         asyncio.run(retry_pipeline(pipeline_dir, retry_vars))
 
@@ -49,7 +50,7 @@ def __retry_pipeline(pipeline_dir: str, retry_vars: str, log_level: str):
 @click.option('--fail_on_missing', required=False, default=False, type=bool, help="Should this command fail if archived path is not present")
 def __archive_pipeline(pipeline_dir: str, target_path: str, fail_on_missing: bool):
     setup_cli_logging(log_env_vars=False)
-    logging.info(f'command "ARCHIVE" with params:\npipeline_dir="{pipeline_dir}"\ntarget_path="{target_path}"')
+    logging.info(f'command "ARCHIVE" with params:\nPIPELINE_DIR="{pipeline_dir}"\nTARGET_PATH="{target_path}"')
     from pipelines_declarative_executor.utils.archive_utils import ArchiveUtils
     ArchiveUtils.archive(pipeline_dir, target_path, fail_on_missing, use_sops_key=True)
 
@@ -60,7 +61,7 @@ def __archive_pipeline(pipeline_dir: str, target_path: str, fail_on_missing: boo
 @click.option('--fail_on_missing', required=False, default=False, type=bool, help="Should this command fail if archived path is not present")
 def __unarchive_pipeline(archive_path: str, target_path: str, fail_on_missing: bool):
     setup_cli_logging(log_env_vars=False)
-    logging.info(f'command "UNARCHIVE" with params:\narchive_path="{archive_path}"\ntarget_path="{target_path}"')
+    logging.info(f'command "UNARCHIVE" with params:\nARCHIVE_PATH="{archive_path}"\nTARGET_PATH="{target_path}"')
     from pipelines_declarative_executor.utils.archive_utils import ArchiveUtils
     ArchiveUtils.unarchive(archive_path, target_path, fail_on_missing, use_sops_key=True)
 
@@ -70,6 +71,14 @@ def setup_cli_logging(log_level: str = "INFO", log_env_vars: bool = True):
     LoggingUtils.configure_root_logger()
     if log_env_vars:
         LoggingUtils.log_env_vars()
+
+
+def format_param(name: str, value: str | None) -> str:
+    if value:
+        items = StringUtils.trim_lines(value)
+        if items:
+            return f"{name}:\n" + "\n".join(f"   {item}" for item in items)
+    return f"{name}: None"
 
 
 async def create_and_run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is_dry_run: bool):
