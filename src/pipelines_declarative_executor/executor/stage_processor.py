@@ -17,6 +17,7 @@ from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 from pipelines_declarative_executor.utils.logging_utils import LoggingUtils
 from pipelines_declarative_executor.utils.profiling_utils import ProfilingUtils
 from pipelines_declarative_executor.utils.string_utils import StringUtils
+from pipelines_declarative_executor.x_modules_ops.dict_utils import UtilsDictionary
 
 
 class StageProcessor:
@@ -202,16 +203,13 @@ class StageProcessor:
                 for key, value in execution.vars.vars_retry.items():
                     ParamsProcessor.set_retry_var(nested_execution.vars, key, value)
             else:
-                nested_execution = PipelineOrchestrator.prepare_pipeline_execution(
-                    input_calculated.get('pipeline_data'),
-                    input_calculated.get('pipeline_vars')
-                )
+                nested_execution = PipelineOrchestrator.prepare_pipeline_execution(**StageProcessor._extract_nested_params(input_calculated))
 
             from pipelines_declarative_executor.executor.pipeline_executor import PipelineExecutor
             await PipelineExecutor.start(
                 nested_execution,
                 execution_folder_path=stage.exec_dir,
-                is_dry_run=execution.is_dry_run or StringUtils.to_bool(input_calculated.get('is_dry_run')),
+                is_dry_run=execution.is_dry_run or StringUtils.to_bool(UtilsDictionary.get_by_path(input_calculated, "params.params.IS_DRY_RUN")),
                 wait_for_finish=True,
                 is_nested=True,
             )
@@ -220,3 +218,12 @@ class StageProcessor:
         except asyncio.CancelledError:
             execution.logger.warning("Nested pipeline execution cancelled!")
             raise
+
+    @staticmethod
+    def _extract_nested_params(params: dict) -> dict:
+        return {
+            'pipeline_data': (UtilsDictionary.get_by_path(params, "params.params.PIPELINE_DATA")
+                              or UtilsDictionary.get_by_path(params, "params_secure.params.PIPELINE_DATA")),
+            'pipeline_vars': UtilsDictionary.get_by_path(params, "params.params.PIPELINE_VARS"),
+            'pipeline_vars_secure': UtilsDictionary.get_by_path(params, "params_secure.params.PIPELINE_VARS"),
+        }

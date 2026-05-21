@@ -77,6 +77,22 @@ class TestPipelineOrchestrator(unittest.TestCase):
         self.assertEqual(pipeline_execution.pipeline.configuration.get("output", {}).get("params", {}).get("params", {}).get("RESULT_SPAM"), "${RESULT_SPAM}")
         self.assertEqual(pipeline_execution.pipeline.configuration.get("output", {}).get("params", {}).get("params", {}).get("RESULT_SPAMUS"), None)
 
+    def test_pipeline_vars_and_secure_vars_parsed_correctly(self):
+        pipeline_vars = "OVER_PARAM_1 = 123\nOVER_PARAM_2 = 456"
+        secure_vars = "SECRET_TOKEN = s3cr3t\nHIDE_IT = hidden_value"
+        pipeline_execution = PipelineOrchestrator.prepare_pipeline_execution(
+            "pipeline_configs/simple/pipeline_simple.yaml",
+            pipeline_vars=pipeline_vars,
+            pipeline_vars_secure=secure_vars,
+        )
+        self.assertEqual(pipeline_execution.vars.all_vars().get("TEST_VAR"), "test_value")
+        self.assertEqual(pipeline_execution.vars.all_vars().get("OVER_PARAM_1"), "123")
+        self.assertEqual(pipeline_execution.vars.all_vars().get("OVER_PARAM_2"), "456")
+        self.assertEqual(pipeline_execution.vars.all_vars().get("SECRET_TOKEN"), "s3cr3t")
+        self.assertEqual(pipeline_execution.vars.all_vars().get("HIDE_IT"), "hidden_value")
+        self.assertIn("SECRET_TOKEN", pipeline_execution.vars.secure_vars)
+        self.assertNotIn("OVER_PARAM_1", pipeline_execution.vars.secure_vars)
+
 
 if __name__ == '__main__':
     unittest.main()

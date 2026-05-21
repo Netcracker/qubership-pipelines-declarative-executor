@@ -30,19 +30,19 @@ jobs:
     steps:
     - name: Prepare app token
       if: ${{ vars.GH_BUMP_VERSION_APP_ID != '' }}
-      uses: actions/create-github-app-token@v1
+      uses: actions/create-github-app-token@v3
       id: app-token
       with:
-        app-id: ${{ vars.GH_BUMP_VERSION_APP_ID }}
+        client-id: ${{ vars.GH_BUMP_VERSION_APP_ID }}
         private-key: ${{ secrets.GH_BUMP_VERSION_APP_KEY }}
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         token: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.11'
 
@@ -83,7 +83,7 @@ jobs:
       contents: write
       pull-requests: write
     needs: [ bump-and-publish ]
-    uses: Netcracker/qubership-workflow-hub/.github/workflows/release-drafter.yml@v1.0.1
+    uses: Netcracker/qubership-workflow-hub/.github/workflows/release-drafter.yml@v2.2.2
     with:
       version: ${{ needs.bump-and-publish.outputs.release_version }}
       ref: ${{ github.ref_name }}
@@ -96,11 +96,11 @@ jobs:
       packages: write
     needs: [ bump-and-publish, create-github-release ]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     # requirements.txt generation
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: '3.11'
 
