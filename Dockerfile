@@ -2,11 +2,15 @@ FROM python:3.13-alpine
 LABEL org.opencontainers.image.description="Qubership Pipelines Declarative Executor"
 WORKDIR /app
 
+ARG SOPS_VERSION
+COPY .sops-version /tmp/.sops-version
+
 RUN apk add --no-cache p7zip curl procps git
 
 # Install SOPS
-RUN curl -LO https://github.com/getsops/sops/releases/download/v3.12.2/sops-v3.12.2.linux.amd64 && \
-    mv sops-v3.12.2.linux.amd64 /usr/local/bin/sops && chmod +x /usr/local/bin/sops
+RUN SOPS_VERSION=${SOPS_VERSION:-$(cat /tmp/.sops-version)} && \
+    curl -LO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64 && \
+    mv sops-${SOPS_VERSION}.linux.amd64 /usr/local/bin/sops && chmod +x /usr/local/bin/sops
 
 # Install Executor
 COPY . .

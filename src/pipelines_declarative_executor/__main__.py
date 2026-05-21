@@ -15,18 +15,23 @@ def cli():
 @cli.command("run")
 @click.option('--pipeline_data', required=True, type=str, help="Pipeline data (pipeline/config file paths)")
 @click.option('--pipeline_vars', required=False, type=str, help="Pipeline vars with high priority")
+@click.option('--pipeline_vars_secure', required=False, type=str, help="Secure pipeline vars with high priority that are masked in logs/report")
 @click.option('--pipeline_dir', required=False, type=str, help="Path to directory where pipeline will be executed")
 @click.option('--is_dry_run', default=False, type=bool, help="Dry run mode (no actual execution)")
 @click.option('--log_level', default='INFO', show_default=True,
               type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], case_sensitive=False),
               help="Console logging level")
-def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is_dry_run: bool, log_level: str):
+def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_vars_secure: str, pipeline_dir: str, is_dry_run: bool, log_level: str):
     setup_cli_logging(log_level)
     PythonModuleUtils.prepare_python_module()
-    logging.info(f'command "RUN" with params:\n{format_param("PIPELINE_DATA", pipeline_data)}\n{format_param("PIPELINE_VARS", pipeline_vars)}'
-                 f'\nPIPELINE_DIR="{pipeline_dir}"\nIS_DRY_RUN="{is_dry_run}"\nLOG_LEVEL="{log_level}"')
+    logging.info(
+        f'command "RUN" with params:'
+        f'\n{format_param("PIPELINE_DATA", pipeline_data)}'
+        f'\n{format_pipeline_vars(pipeline_vars, pipeline_vars_secure)}'
+        f'\nPIPELINE_DIR="{pipeline_dir}"\nIS_DRY_RUN="{is_dry_run}"\nLOG_LEVEL="{log_level}"'
+    )
     with (ProfilingUtils.time_it(), ProfilingUtils.profile_it(), ProfilingUtils.track_peak_usage()):
-        asyncio.run(create_and_run_pipeline(pipeline_data, pipeline_vars, pipeline_dir, is_dry_run))
+        asyncio.run(create_and_run_pipeline(pipeline_data, pipeline_vars, pipeline_vars_secure, pipeline_dir, is_dry_run))
 
 
 @cli.command("retry")
@@ -81,7 +86,22 @@ def format_param(name: str, value: str | None) -> str:
     return f"{name}: None"
 
 
-async def create_and_run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_dir: str, is_dry_run: bool):
+def format_pipeline_vars(pipeline_vars: str | None, pipeline_vars_secure: str | None) -> str:
+    formatted_vars = []
+    if pipeline_vars:
+        for item in StringUtils.trim_lines(pipeline_vars):
+            formatted_vars.append(f"   {item}")
+    if pipeline_vars_secure:
+        for item in StringUtils.trim_lines(pipeline_vars_secure):
+            if '=' in item:
+                key, value = item.split('=', 1)
+                formatted_vars.append(f"   {key.strip()}={StringUtils.mask_value(value=value)}")
+    if formatted_vars:
+        return "PIPELINE_VARS:\n" + "\n".join(formatted_vars)
+    return "PIPELINE_VARS: None"
+
+
+async def create_and_run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_vars_secure: str, pipeline_dir: str, is_dry_run: bool):
     from pipelines_declarative_executor.orchestrator.pipeline_orchestrator import PipelineOrchestrator
     from pipelines_declarative_executor.executor.pipeline_executor import PipelineExecutor
     from pipelines_declarative_executor.report.report_uploader import ReportUploader
@@ -89,7 +109,8 @@ async def create_and_run_pipeline(pipeline_data: str, pipeline_vars: str, pipeli
     try:
         pipeline_execution = PipelineOrchestrator.prepare_pipeline_execution(
             pipeline_data=pipeline_data,
-            pipeline_vars=pipeline_vars
+            pipeline_vars=pipeline_vars,
+            pipeline_vars_secure=pipeline_vars_secure,
         )
     except Exception as e:
         logging.error(f"Exception during orchestration: {e}")

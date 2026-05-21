@@ -39,14 +39,16 @@ pipeline:
     - name: Trigger Another Pipeline Lv.2
       type: ${STAGE_TYPE_NESTED}
       input:
-        pipeline_data: |
-          ${PIPELINE_DATA_DIR}/pipeline_linear.yaml
-        pipeline_vars: |
-          OVER_PARAM_1 = 123
-          OVER_PARAM_2 = 4124
-          PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
-          ENABLE_RANDOM_SLEEP = ${ENABLE_RANDOM_SLEEP}
-        is_dry_run: false
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pipeline_linear.yaml
+            PIPELINE_VARS: |
+              OVER_PARAM_1 = 123
+              OVER_PARAM_2 = 4124
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              ENABLE_RANDOM_SLEEP = ${ENABLE_RANDOM_SLEEP}
+            IS_DRY_RUN: false
       output:
         params:
           params: "*"

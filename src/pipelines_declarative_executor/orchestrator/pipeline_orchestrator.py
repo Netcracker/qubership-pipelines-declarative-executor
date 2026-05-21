@@ -16,8 +16,12 @@ from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 class PipelineOrchestrator:
     @staticmethod
-    def prepare_pipeline_execution(pipeline_data: str, pipeline_vars: str = None) -> PipelineExecution:
-        pipeline_execution = PipelineExecution(inputs={"pipeline_data": pipeline_data, "pipeline_vars": pipeline_vars})
+    def prepare_pipeline_execution(pipeline_data: str, pipeline_vars: str = None, pipeline_vars_secure: str = None) -> PipelineExecution:
+        pipeline_execution = PipelineExecution(inputs={
+            "pipeline_data": pipeline_data,
+            "pipeline_vars": pipeline_vars,
+            "pipeline_vars_secure": pipeline_vars_secure,
+        })
         vars_obj = PipelineVars()
         merged_template = PipelineTemplate()
         last_pipeline = None
@@ -46,10 +50,11 @@ class PipelineOrchestrator:
             raise Exception("No 'AtlasPipeline' present in 'pipeline_data'!")
 
         if pipeline_embedded_vars := last_pipeline.data.get('pipeline', {}).get('vars'):
-            ParamsProcessor.set_pipeline_vars(vars_obj, pipeline_embedded_vars, last_pipeline.file_path, last_pipeline.is_secure, last_pipeline.is_remote)
-
+            ParamsProcessor.set_pipeline_embedded_vars(vars_obj, pipeline_embedded_vars, last_pipeline.file_path, last_pipeline.is_secure, last_pipeline.is_remote)
         if pipeline_vars:
-            PipelineOrchestrator._process_pipeline_vars(vars_obj, pipeline_vars)
+            PipelineOrchestrator._process_pipeline_vars(vars_obj, pipeline_vars, is_secure=False)
+        if pipeline_vars_secure:
+            PipelineOrchestrator._process_pipeline_vars(vars_obj, pipeline_vars_secure, is_secure=True)
 
         PipelineOrchestrator._process_global_configs(vars_obj)
 
@@ -69,19 +74,19 @@ class PipelineOrchestrator:
     @staticmethod
     def _process_pipeline_template(merged_template: PipelineTemplate, vars_obj: PipelineVars, template: AtlasMetaFile):
         if template_vars := template.data.get('pipeline', {}).get('vars'):
-            ParamsProcessor.set_pipeline_vars(vars_obj, template_vars, template.file_path, template.is_secure, template.is_remote)
+            ParamsProcessor.set_pipeline_embedded_vars(vars_obj, template_vars, template.file_path, template.is_secure, template.is_remote)
         if template_config := template.data.get('pipeline', {}).get('configuration'):
             merged_template.configuration.update(template_config)
         if template_jobs := template.data.get('pipeline', {}).get('jobs'):
             merged_template.job_templates.update(template_jobs)
 
     @staticmethod
-    def _process_pipeline_vars(vars_obj: PipelineVars, pipeline_vars: str):
+    def _process_pipeline_vars(vars_obj: PipelineVars, pipeline_vars: str, is_secure: bool = False):
         vars_list = StringUtils.trim_lines(pipeline_vars)
         for var in vars_list:
             if '=' in var:
                 key, value = var.split('=', 1)
-                ParamsProcessor.set_override_var(vars_obj, key.strip(), value.strip())
+                ParamsProcessor.set_override_var(vars_obj, key.strip(), value.strip(), is_secure)
 
     @staticmethod
     def _process_global_configs(vars_obj: PipelineVars):

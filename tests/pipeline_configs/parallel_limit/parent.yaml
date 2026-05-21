@@ -22,7 +22,9 @@ pipeline:
       - name: Trigger Child Pipeline 1
         type: ${STAGE_TYPE_NESTED}
         input:
-          pipeline_data: ${PIPELINE_DATA_DIR}/child.yaml
+          params:
+            params:
+              PIPELINE_DATA: ${PIPELINE_DATA_DIR}/child.yaml
         output:
           params:
             params: "*"
@@ -30,7 +32,9 @@ pipeline:
       - name: Trigger Child Pipeline 2
         type: ${STAGE_TYPE_NESTED}
         input:
-          pipeline_data: ${PIPELINE_DATA_DIR}/child.yaml
+          params:
+            params:
+              PIPELINE_DATA: ${PIPELINE_DATA_DIR}/child.yaml
         output:
           params:
             params: "*"
@@ -38,7 +42,9 @@ pipeline:
       - name: Trigger Child Pipeline 3
         type: ${STAGE_TYPE_NESTED}
         input:
-          pipeline_data: ${PIPELINE_DATA_DIR}/child.yaml
+          params:
+            params:
+              PIPELINE_DATA: ${PIPELINE_DATA_DIR}/child.yaml
         output:
           params:
             params: "*"
@@ -46,7 +52,9 @@ pipeline:
       - name: Trigger Child Pipeline 4
         type: ${STAGE_TYPE_NESTED}
         input:
-          pipeline_data: ${PIPELINE_DATA_DIR}/child.yaml
+          params:
+            params:
+              PIPELINE_DATA: ${PIPELINE_DATA_DIR}/child.yaml
         output:
           params:
             params: "*"

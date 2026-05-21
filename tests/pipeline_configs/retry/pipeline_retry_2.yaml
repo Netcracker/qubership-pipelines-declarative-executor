@@ -47,12 +47,14 @@ pipeline:
         - name: Pipeline Lv.3
           type: ${STAGE_TYPE_NESTED}
           input:
-            pipeline_data: |
-              ${PIPELINE_DATA_DIR}/pipeline_retry_3.yaml
-            pipeline_vars: |
-              OVER_PARAM_1 = qqqq
-              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
-              WAIT_CMD = ${WAIT_CMD}
+            params:
+              params:
+                PIPELINE_DATA: |
+                  ${PIPELINE_DATA_DIR}/pipeline_retry_3.yaml
+                PIPELINE_VARS: |
+                  OVER_PARAM_1 = qqqq
+                  PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                  WAIT_CMD = ${WAIT_CMD}
           output:
             params:
               params: "*"

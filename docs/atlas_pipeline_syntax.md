@@ -237,10 +237,17 @@ Nested pipelines (aka "Atlas Pipeline Triggers") allow you to reuse pipeline def
 - name: Nested Pipeline
   type: ATLAS_PIPELINE_TRIGGER
   input:
-    pipeline_data: "path/to/nested_pipeline.yaml"
-    pipeline_vars: |
-      VAR1 = value1
-      VAR2 = value2
+    params:
+      params:
+        PIPELINE_DATA: "path/to/nested_pipeline.yaml"
+        IS_DRY_RUN: false
+        PIPELINE_VARS: |
+          VAR1 = value1
+          VAR2 = value2
+    params_secure:
+      params:
+        PIPELINE_VARS: |
+          HIDDEN_SECURE_VAR=WILL_BE_HIDDEN
   output:
     params:
       RESULT_FROM_NESTED: "params.output_variable"

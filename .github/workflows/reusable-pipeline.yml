@@ -62,7 +62,7 @@ jobs:
 
     steps:
     - name: Download previous run data to retry
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       if: ${{ inputs.retry_run_id != '' }}
       with:
         name: ${{ env.DEFAULT_PIPELINE_DIR }}
@@ -93,35 +93,35 @@ jobs:
         python -m pipelines_declarative_executor archive --pipeline_dir="./${DEFAULT_PIPELINE_DIR}" --target_path="${DEFAULT_PIPELINE_DIR_ZIP}"
 
     - name: Upload PIPELINE_DIR
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: PIPELINE_DIR
         path: ${{ env.DEFAULT_PIPELINE_DIR_ZIP }}
 
     - name: Upload PIPELINE_OUTPUT
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: PIPELINE_OUTPUT
         path: ${{ env.DEFAULT_PIPELINE_DIR }}/pipeline_output
 
     - name: Upload PIPELINE_REPORT
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: PIPELINE_REPORT
         path: ${{ env.DEFAULT_PIPELINE_DIR }}/pipeline_state/pipeline_report.json
 
     - name: Upload FULL EXECUTION LOG
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: full_execution.log
         path: full_execution.log
 
     - name: Upload DEBUG DATA
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: X_DEBUG

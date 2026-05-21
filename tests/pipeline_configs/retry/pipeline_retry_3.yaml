@@ -18,13 +18,15 @@ pipeline:
         - name: Pipeline Lv.4 1
           type: ${STAGE_TYPE_NESTED}
           input:
-            pipeline_data: |
-              ${PIPELINE_DATA_DIR}/pipeline_retry_4.yaml
-            pipeline_vars: |
-              CALC_OPERATION = ${CALC_OPERATION}
-              CALC_ARG1 = 2
-              CALC_ARG2 = 2
-              WAIT_CMD = ${WAIT_CMD}
+            params:
+              params:
+                PIPELINE_DATA: |
+                  ${PIPELINE_DATA_DIR}/pipeline_retry_4.yaml
+                PIPELINE_VARS: |
+                  CALC_OPERATION = ${CALC_OPERATION}
+                  CALC_ARG1 = 2
+                  CALC_ARG2 = 2
+                  WAIT_CMD = ${WAIT_CMD}
           output:
             params:
               CALC_1: "params.CALC_RESULT"
@@ -34,13 +36,15 @@ pipeline:
         - name: Pipeline Lv.4 2
           type: ${STAGE_TYPE_NESTED}
           input:
-            pipeline_data: |
-              ${PIPELINE_DATA_DIR}/pipeline_retry_4.yaml
-            pipeline_vars: |
-              CALC_OPERATION = add
-              CALC_ARG1 = 4
-              CALC_ARG2 = 4
-              WAIT_CMD = ${WAIT_CMD}
+            params:
+              params:
+                PIPELINE_DATA: |
+                  ${PIPELINE_DATA_DIR}/pipeline_retry_4.yaml
+                PIPELINE_VARS: |
+                  CALC_OPERATION = add
+                  CALC_ARG1 = 4
+                  CALC_ARG2 = 4
+                  WAIT_CMD = ${WAIT_CMD}
           output:
             params:
               CALC_2: "params.CALC_RESULT"
@@ -50,13 +54,15 @@ pipeline:
         - name: Pipeline Lv.4 3
           type: ${STAGE_TYPE_NESTED}
           input:
-            pipeline_data: |
-              ${PIPELINE_DATA_DIR}/pipeline_retry_4.yaml
-            pipeline_vars: |
-              CALC_OPERATION = ${CALC_OPERATION}
-              CALC_ARG1 = 8
-              CALC_ARG2 = 8
-              WAIT_CMD = ${WAIT_CMD}
+            params:
+              params:
+                PIPELINE_DATA: |
+                  ${PIPELINE_DATA_DIR}/pipeline_retry_4.yaml
+                PIPELINE_VARS: |
+                  CALC_OPERATION = ${CALC_OPERATION}
+                  CALC_ARG1 = 8
+                  CALC_ARG2 = 8
+                  WAIT_CMD = ${WAIT_CMD}
           output:
             params:
               CALC_3: "params.CALC_RESULT"
