@@ -34,6 +34,10 @@ class ReportCollector:
         return ui_view
 
     @staticmethod
+    def reset_stages_cache(execution: PipelineExecution):
+        ReportCollector.__FINISHED_STAGES.clear()
+
+    @staticmethod
     def _prepare_execution(execution: PipelineExecution) -> dict:
         data = {
             "id": execution.pipeline.id,
@@ -46,6 +50,7 @@ class ReportCollector:
             "url": EnvVar.EXECUTION_URL,
             "user": EnvVar.EXECUTION_USER,
             "email": EnvVar.EXECUTION_EMAIL,
+            "customData": execution.custom_data,
         }
         return data
 
@@ -85,6 +90,7 @@ class ReportCollector:
             for params_type in ["input", "output"]:
                 if params_secure := stage_data.get(params_type, {}).get("params_secure", {}):
                     stage_data[params_type]["params_secure"] = ReportCollector._mask_secure_params(key="params_secure", data=params_secure)
+            stage_data.pop("retry", None)
 
         if stage.type == StageType.PARALLEL_BLOCK:
             stage_data[ReportCollector.PARALLEL_STAGES] = []

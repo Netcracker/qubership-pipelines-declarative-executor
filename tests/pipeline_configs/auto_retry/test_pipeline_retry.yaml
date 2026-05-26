@@ -1,0 +1,34 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-level-retry-test
+  name: Pipeline-Level Retry Test
+
+  stages:
+    - name: Might-Fail-Stage 1
+      job: template-might-fail-stage
+
+    - name: Might-Fail-Stage 2
+      job: template-might-fail-stage
+
+    - name: Might-Fail-Stage 3
+      job: template-might-fail-stage
+
+    - name: Might-Fail-Stage 4
+      job: template-might-fail-stage
+
+  jobs:
+    template-might-fail-stage:
+      type: PYTHON_MODULE
+      command: "debug"
+      input:
+        params:
+          params:
+            failure_chance: .6
+
+  configuration:
+    retry:
+      limit: -1
+      backoff:
+        max_duration: 0.1s

@@ -55,13 +55,24 @@ class ArchiveUtils:
             )
 
     @staticmethod
-    def backup_directory(source_dir: str, target_dir: str):
-        import shutil
+    def backup_directory(source_dir: str, target_dir: str, excluded_dirs: list = None):
+        import zipfile
         from datetime import datetime
         from pathlib import Path
+        from pipelines_declarative_executor.utils.constants import Constants
 
-        backup_name = "backup_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S_%f")
-        shutil.make_archive(backup_name, 'zip', source_dir)
-        backup_name = backup_name + ".zip"
+        backup_name = "backup_" + datetime.now().strftime("%d_%m_%Y_%H_%M_%S_%f") + ".zip"
+        backup_path = Path(target_dir) / backup_name
         Path(target_dir).mkdir(parents=True, exist_ok=True)
-        shutil.move(backup_name, Path(target_dir).joinpath(backup_name))
+
+        if excluded_dirs is None:
+            excluded_dirs = [Constants.PIPELINE_BACKUP_DIR_NAME, Constants.PIPELINE_DEBUG_DIR_NAME]
+        with zipfile.ZipFile(str(backup_path), 'w', zipfile.ZIP_DEFLATED) as zf:
+            for root, dirs, files in os.walk(source_dir):
+                for excluded_dir in excluded_dirs:
+                    if excluded_dir in dirs:
+                        dirs.remove(excluded_dir)
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, source_dir)
+                    zf.write(file_path, arcname)

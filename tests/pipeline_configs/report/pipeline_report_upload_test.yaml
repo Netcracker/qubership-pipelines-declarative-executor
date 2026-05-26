@@ -1,0 +1,22 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-report-upload-test
+  name: Pipeline Report Upload Test
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    SLEEP_TIME: 1
+
+  stages:
+    - name: Spam Stage
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            sleep_time: ${SLEEP_TIME}
+
+    - name: Echo Stage
+      type: SHELL_COMMAND
+      command: echo "report upload done"

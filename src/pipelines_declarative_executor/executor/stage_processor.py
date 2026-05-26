@@ -31,7 +31,8 @@ class StageProcessor:
             execution.logger.info(f"Skipped processing stage {stage.logged_name()} - {stage.status} (RETRY)")
             return
 
-        StageProcessor._pre_process(execution, stage)
+        is_first_run = stage.is_first_run()
+        StageProcessor._pre_process(execution, stage, is_first_run)
 
         if not ConditionProcessor.need_to_execute(execution, stage.when):
             stage.status = ExecutionStatus.SKIPPED
@@ -66,9 +67,12 @@ class StageProcessor:
         except Exception as e:
             stage.status = ExecutionStatus.FAILED
             execution.logger.error(f"Exception during stage {stage.logged_name()} execution: [{type(e)} - {str(e)}]")
-            raise StageExecutionException(f"Stage {stage.name} failed")
+            from pipelines_declarative_executor.executor.retry_processor import RetryProcessor
+            await RetryProcessor.retry_stage(execution, stage)
+            if stage.status == ExecutionStatus.FAILED:
+                raise StageExecutionException(f"Stage {stage.name} failed")
         finally:
-            StageProcessor._post_process(execution, stage)
+            StageProcessor._post_process(execution, stage, is_first_run)
 
     @staticmethod
     def _check_retry_status(execution: PipelineExecution, stage: Stage) -> bool:
@@ -89,15 +93,20 @@ class StageProcessor:
         )
 
     @staticmethod
-    def _pre_process(execution: PipelineExecution, stage: Stage):
-        stage.start_time = datetime.now()
-        execution.logger.info(f"Start processing stage {stage.logged_name()}")
+    def _pre_process(execution: PipelineExecution, stage: Stage, is_first_run: bool = True):
+        if is_first_run:
+            stage.start_time = datetime.now()
+            execution.logger.info(f"Start processing stage {stage.logged_name()}")
+        else:
+            execution.logger.info(f"Retry processing stage {stage.logged_name()}")
 
     @staticmethod
-    def _post_process(execution: PipelineExecution, stage: Stage):
+    def _post_process(execution: PipelineExecution, stage: Stage, is_first_run: bool = True):
+        if not is_first_run: # only top-level process will finalize
+            return
         stage.finish_time = datetime.now()
-        total_time_log = f"(time: {stage.logged_time()})" if stage.type in [StageType.PYTHON_MODULE, StageType.REPORT] else ""
-        execution.logger.info(f"Finish processing stage {stage.logged_name()} - {stage.status} {total_time_log}")
+        total_time_log = f" (time: {stage.logged_time()})" if stage.type not in COMPLEX_TYPES else ""
+        execution.logger.info(f"Finish processing stage {stage.logged_name()} - {stage.status}{total_time_log}")
         execution.store_state()
 
     @staticmethod
@@ -121,12 +130,14 @@ class StageProcessor:
             except asyncio.TimeoutError:
                 if process:
                     process.kill() # instead of terminate
+                    await process.wait()
                 raise Exception(f"Shell command timed out after {EnvVar.SHELL_PROCESS_TIMEOUT} seconds")
 
         except asyncio.CancelledError:
             execution.logger.warning(f"Shell Execution cancelled! (stage {stage.logged_name()})")
             if process:
-                process.terminate()
+                process.kill()
+                await process.wait()
             raise
 
         finally:
@@ -188,8 +199,9 @@ class StageProcessor:
             execution.logger.info(f'Processing nested pipeline... (stage {stage.logged_name()})')
             input_calculated = CommonUtils.calculate_dict_values(execution, stage.input)
 
-            if execution.is_retry and getattr(stage, StageProcessor.RETRY_NESTED_FLAG, False):
-                state_dir = stage.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME)
+            state_dir = stage.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME)
+            if (execution.is_retry and getattr(stage, StageProcessor.RETRY_NESTED_FLAG, False)
+                    and state_dir.joinpath(Constants.STATE_EXECUTION_FILE_NAME).exists()):
                 nested_execution = PipelineRetryOrchestrator.create_execution_from_dict(
                     CommonUtils.load_json_file(state_dir.joinpath(Constants.STATE_EXECUTION_FILE_NAME)),
                     stage.exec_dir, execution.inputs.get("retry_vars")
@@ -206,7 +218,7 @@ class StageProcessor:
                 nested_execution = PipelineOrchestrator.prepare_pipeline_execution(**StageProcessor._extract_nested_params(input_calculated))
 
             from pipelines_declarative_executor.executor.pipeline_executor import PipelineExecutor
-            await PipelineExecutor.start(
+            nested_execution = await PipelineExecutor.start(
                 nested_execution,
                 execution_folder_path=stage.exec_dir,
                 is_dry_run=execution.is_dry_run or StringUtils.to_bool(UtilsDictionary.get_by_path(input_calculated, "params.params.IS_DRY_RUN")),

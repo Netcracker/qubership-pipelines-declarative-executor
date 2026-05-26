@@ -90,9 +90,10 @@ class PipelineExecution:
     start_time: datetime = None
     finish_time: datetime = None
     logger: Logger = None
-    is_retry: bool = False
     is_nested: bool = False
+    is_retry: bool = False
     previous_executions: list = field(default_factory=list)
+    custom_data: dict = field(default_factory=dict)
 
     def store_state(self):
         if not self.state_dir:

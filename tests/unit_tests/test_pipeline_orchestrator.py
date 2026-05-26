@@ -73,9 +73,18 @@ class TestPipelineOrchestrator(unittest.TestCase):
         self.assertEqual(pipeline_execution.pipeline.stages[2].input.get("params", {}).get("params", {}).get("some_param_from_template2"), True)
 
         # pipeline.configuration merge test
-        self.assertEqual(pipeline_execution.pipeline.configuration.get("retry", {}).get("limit"), 5)
+        self.assertEqual(pipeline_execution.pipeline.configuration.get("retry", {}).get("limit"), '5')
         self.assertEqual(pipeline_execution.pipeline.configuration.get("output", {}).get("params", {}).get("params", {}).get("RESULT_SPAM"), "${RESULT_SPAM}")
         self.assertEqual(pipeline_execution.pipeline.configuration.get("output", {}).get("params", {}).get("params", {}).get("RESULT_SPAMUS"), None)
+
+    def test_pipeline_retry_config_not_merged_with_template(self):
+        pipeline_execution = PipelineOrchestrator.prepare_pipeline_execution(
+            "pipeline_configs/templates/test_template.yaml;"
+            "pipeline_configs/auto_retry/test_retry_overrides_template.yaml;"
+        )
+        retry = pipeline_execution.pipeline.configuration.get("retry", {})
+        self.assertEqual(retry.get("limit"), '3')
+        self.assertNotIn("backoff", retry)
 
     def test_pipeline_vars_and_secure_vars_parsed_correctly(self):
         pipeline_vars = "OVER_PARAM_1 = 123\nOVER_PARAM_2 = 456"

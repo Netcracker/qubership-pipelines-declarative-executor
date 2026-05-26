@@ -19,6 +19,7 @@
 | PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_DEBUG_DATA_COLLECTOR |     True      | Enables debug data collection after pipeline execution (available in 'x_debug' directory) |
 | PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_COLLAPSIBLE_CI_LOGS  |     True      | Hides command's stdout under GitHub/GitLab specific collapsible sections                  |
 | PIPELINES_DECLARATIVE_EXECUTOR_USE_COMPACT_LOGGED_NAMES    |     True      | Logs pipeline/stage names without IDs and UUIDs (still prints last 8 characters of UUID)  |
+| PIPELINES_DECLARATIVE_EXECUTOR_ENABLE_BACKUP_BEFORE_RETRY  |     False     | Enables backup of execution directory before processing during manual execution retry     |
 
 ### Profiling Params
 
@@ -38,6 +39,7 @@
 | PIPELINES_DECLARATIVE_EXECUTOR_MAX_CONCURRENT_STAGES          | {Number of available CPU cores} | Limits how many subprocesses with "Python Modules" might be processes concurrently                             |
 | PIPELINES_DECLARATIVE_EXECUTOR_REQUIRED_MEMORY_PER_SUBPROCESS |               100               | Average memory footprint of invoked CLIs in megabytes, used to limit invocations when not having enough memory |
 | PIPELINES_DECLARATIVE_EXECUTOR_RESOURCE_MANAGER_QUEUE_TIMEOUT |               360               | Timeout in seconds for "Python Module" stages to wait for resources acquisition                                |
+| PIPELINES_DECLARATIVE_EXECUTOR_RECURSION_LIMIT                |              1000               | Python process recursion limit                                                                                 |
 
 ### SOPS Encryption Params
 

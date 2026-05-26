@@ -3,12 +3,12 @@ from datetime import datetime
 from pathlib import Path
 
 from pipelines_declarative_executor.executor.params_processor import ParamsProcessor
-from pipelines_declarative_executor.report.report_collector import ReportCollector
 from pipelines_declarative_executor.model.pipeline import PipelineExecution, PipelineVars, Pipeline
 from pipelines_declarative_executor.model.stage import ExecutionStatus, StageType, Stage, When
 from pipelines_declarative_executor.utils.archive_utils import ArchiveUtils
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
 from pipelines_declarative_executor.utils.constants import Constants
+from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 
@@ -17,12 +17,13 @@ class PipelineRetryOrchestrator:
     FAILED_STATUSES = [ExecutionStatus.FAILED, ExecutionStatus.CANCELLED, ExecutionStatus.IN_PROGRESS]
 
     @staticmethod
-    def prepare_retry_execution(pipeline_dir: str, retry_vars: str = None) -> PipelineExecution:
-        try:
-            ArchiveUtils.backup_directory(pipeline_dir, Path(pipeline_dir).joinpath(Constants.PIPELINE_BACKUP_DIR_NAME).as_posix())
-        except:
-            logging.error("Failed to prepare backup of execution folder")
-            raise
+    def prepare_retry_execution(pipeline_dir: str, retry_vars: str = None, existing_execution: PipelineExecution = None) -> PipelineExecution:
+        if EnvVar.ENABLE_BACKUP_BEFORE_RETRY and existing_execution is None:
+            try:
+                ArchiveUtils.backup_directory(pipeline_dir, Path(pipeline_dir).joinpath(Constants.PIPELINE_BACKUP_DIR_NAME).as_posix())
+            except:
+                logging.error("Failed to prepare backup of execution folder")
+                raise
 
         try:
             pipeline_state_dir = Path(pipeline_dir).joinpath(Constants.PIPELINE_STATE_DIR_NAME)
@@ -52,6 +53,15 @@ class PipelineRetryOrchestrator:
                     ParamsProcessor.set_retry_var(vars_obj, key.strip(), value.strip())
         pipeline_execution.vars = vars_obj
 
+        if existing_execution:
+            existing_execution.previous_executions = pipeline_execution.previous_executions
+            existing_execution.pipeline = pipeline_execution.pipeline
+            existing_execution.vars = pipeline_execution.vars
+            existing_execution.status = ExecutionStatus.NOT_STARTED
+            existing_execution.code = None
+            existing_execution.is_retry = True
+            return existing_execution
+
         return pipeline_execution
 
     @staticmethod
@@ -78,7 +88,6 @@ class PipelineRetryOrchestrator:
             "pipeline_data": old_execution.get("inputs", {}).get("pipeline_data"),
             "pipeline_dir": pipeline_dir,
             "retry_vars": retry_vars,
-            #"skip_stage": skip_stage,
         })
         # get pipeline_data from previous execution
         pipeline_execution.previous_executions = old_execution.pop("previous_executions", [])
@@ -190,9 +199,10 @@ class PipelineRetryOrchestrator:
         # Regenerate ui_report of nested pipelines;
         # since usually it's generated at the end of pipeline processing, at each level,
         # But during Retry here we are processing our tree downwards;
-        pipeline_execution = PipelineRetryOrchestrator.load_pipeline_state_from_dir(stage.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME))
-        ui_view = ReportCollector.prepare_ui_view(pipeline_execution)
-        CommonUtils.write_json(ui_view, pipeline_execution.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME).joinpath(Constants.PIPELINE_REPORT_FILE_NAME))
+        # pipeline_execution = PipelineRetryOrchestrator.load_pipeline_state_from_dir(stage.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME))
+        # ui_view = ReportCollector.prepare_ui_view(pipeline_execution)
+        # CommonUtils.write_json(ui_view, pipeline_execution.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME).joinpath(Constants.PIPELINE_REPORT_FILE_NAME))
+        pass
 
     @staticmethod
     def _update_parallel_stage(stage: Stage, found_failed: bool) -> bool:

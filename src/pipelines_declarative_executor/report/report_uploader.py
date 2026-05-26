@@ -5,7 +5,6 @@ from miniopy_async import Minio
 
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
 from pipelines_declarative_executor.model.report import RemoteEndpointConfig, HttpEndpointConfig, S3EndpointConfig, ReportUploadMode, ReportUploadType
-from pipelines_declarative_executor.model.stage import ExecutionStatus
 from pipelines_declarative_executor.report.report_collector import ReportCollector
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar, EnvVarUtils
 from pipelines_declarative_executor.utils.string_utils import StringUtils
@@ -14,6 +13,7 @@ from pipelines_declarative_executor.utils.string_utils import StringUtils
 class ReportUploader:
     def __init__(self, execution: PipelineExecution, configs: list[RemoteEndpointConfig], **kwargs):
         self.execution = execution
+        self._periodic_task = None
         self.http_sessions = []
         self.s3_clients = []
         for config in configs:
@@ -43,9 +43,19 @@ class ReportUploader:
                 logging.error(f"Unknown report RemoteEndpointConfig type: {type(config)}")
 
     async def __aenter__(self):
-        await self._upload_handler()
+        if self.http_sessions or self.s3_clients:
+            if EnvVar.REPORT_SEND_MODE == ReportUploadMode.PERIODIC:
+                self._periodic_task = asyncio.create_task(self._periodic_send())
+        return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self._periodic_task:
+            self._periodic_task.cancel()
+            try:
+                await self._periodic_task
+            except asyncio.CancelledError:
+                pass
+        await self._send_report()
         await self.close()
 
     async def close(self):
@@ -58,21 +68,13 @@ class ReportUploader:
         if cleanup_tasks:
             await asyncio.gather(*cleanup_tasks, return_exceptions=True)
 
-    async def _upload_handler(self):
-        if not self.http_sessions and not self.s3_clients:
-            logging.warning("No remote endpoints were configured for ReportUploader, no reports will be uploaded!")
-            return
-        if EnvVar.REPORT_SEND_MODE == ReportUploadMode.PERIODIC:
-            while self.execution.status not in [ExecutionStatus.SUCCESS, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED]:
+    async def _periodic_send(self):
+        try:
+            while True:
                 await self._send_report()
                 await asyncio.sleep(EnvVar.REPORT_SEND_INTERVAL)
-            logging.debug("Sending FINAL execution report...")
-            await self._send_report()
-        elif EnvVar.REPORT_SEND_MODE == ReportUploadMode.ON_COMPLETION:
-            while self.execution.status not in [ExecutionStatus.SUCCESS, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED]:
-                await asyncio.sleep(EnvVar.REPORT_STATUS_POLL_INTERVAL)
-            logging.debug("Sending ON_COMPLETION execution report...")
-            await self._send_report()
+        except asyncio.CancelledError:
+            pass
 
     async def _send_report(self):
         try:
@@ -83,6 +85,8 @@ class ReportUploader:
             for s3_data in self.s3_clients:
                 upload_tasks.append(self._upload_via_s3(s3_data, report))
             await asyncio.gather(*upload_tasks, return_exceptions=True)
+        except FileNotFoundError as e:
+            logging.debug(e)
         except Exception as e:
             logging.error(f"Exception during sending report: [{type(e)} - {str(e)}]")
 
@@ -90,7 +94,7 @@ class ReportUploader:
         if self.execution.state_dir and self.execution.state_dir.exists():
             report = ReportCollector.prepare_ui_view(self.execution)
             return json.dumps(report, default=StringUtils.json_encode)
-        raise Exception("Report not found!")
+        raise FileNotFoundError("Report not found/not ready yet")
 
     @staticmethod
     async def _upload_via_http(session_data: dict, report: bytes):
