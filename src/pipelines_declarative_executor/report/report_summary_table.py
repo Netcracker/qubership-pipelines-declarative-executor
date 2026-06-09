@@ -90,6 +90,7 @@ class ReportSummaryTable:
         lines.append(f"ID: {ReportSummaryTable._get_or_default(report, 'id')}")
         lines.append(f"Total Duration: {ReportSummaryTable._get_precise_duration_str(report.get('startedAt'), report.get('finishedAt'))}")
         lines.append(f"Total Stages: {len(rows)}")
+        lines.append(f"Retry attempts: {report.get('customData', {}).get('retry_attempt', 0)}")
         lines.append(f"Status: {ReportSummaryTable._get_or_default(report, 'status')}")
         if EnvVar.ENABLE_PEAK_RESOURCE_USAGE_PROFILING:
             lines.extend(ReportSummaryTable._build_peak_usage_section())

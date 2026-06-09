@@ -53,6 +53,7 @@ class Stage:
     command: str = None
     input: dict = None
     output: dict = None
+    retry: dict = None
     when: When = field(default_factory=lambda: When())
     nested_parallel_stages: list[Stage] = None
 
@@ -79,6 +80,9 @@ class Stage:
             return f"{seconds:.3f}s"
         else:
             return StringUtils.get_duration_str(start_time=self.start_time, finish_time=self.finish_time)
+
+    def is_first_run(self) -> bool:
+        return self.custom_data.get("retry_attempt", 0) == 0
 
 
 @dataclass

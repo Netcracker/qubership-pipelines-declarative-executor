@@ -21,7 +21,8 @@ class PipelineExecutor:
                     execution_folder_path: str | Path,
                     is_dry_run: bool = False,
                     wait_for_finish: bool = False,
-                    is_nested: bool = False) -> PipelineExecution:
+                    is_nested: bool = False,
+                    suppress_summary: bool = False) -> PipelineExecution:
         if not execution.is_retry:
             if not execution_folder_path:
                 execution.exec_dir = Path(tempfile.mkdtemp())
@@ -30,14 +31,14 @@ class PipelineExecutor:
             execution.is_dry_run = is_dry_run
         execution.logger = LoggingUtils.configure_logger(execution.exec_dir)
         execution.logger.info(f"Execution directory: {execution.exec_dir.absolute().as_posix()}")
-        execution.exec_process = asyncio.create_task(PipelineExecutor._process(execution))
+        execution.exec_process = asyncio.create_task(PipelineExecutor._process(execution, suppress_summary=suppress_summary))
         execution.is_nested = is_nested
         if wait_for_finish:
             await execution.exec_process
         return execution
 
     @staticmethod
-    async def _process(execution: PipelineExecution) -> PipelineExecution:
+    async def _process(execution: PipelineExecution, suppress_summary: bool = False) -> PipelineExecution:
         try:
             PipelineExecutor._execution_start(execution)
             for stage in execution.pipeline.stages:
@@ -47,12 +48,25 @@ class PipelineExecutor:
                     pass
             ContextFilesProcessor.store_pipeline_results(execution)
         except asyncio.CancelledError:
-            execution.logger.warning("Stages processing cancelled!")
+            execution.logger.warning("Pipeline execution cancelled!")
+            raise
         except Exception as e:
             execution.logger.error(f"Exception during Pipeline execution: [{type(e)} - {str(e)}]")
         finally:
             PipelineExecutor._execution_finish(execution)
-            return execution
+            try:
+                from pipelines_declarative_executor.executor.retry_processor import RetryProcessor
+                await RetryProcessor.retry_pipeline_execution(execution)
+            except asyncio.CancelledError:
+                if execution.status != ExecutionStatus.CANCELLED:
+                    execution.status = ExecutionStatus.CANCELLED
+                    execution.logger.warning("Pipeline retry cancelled!")
+                raise
+            finally:
+                if not suppress_summary and not execution.is_nested:
+                    PipelineExecutor._generate_summary(execution)
+                    return execution
+        return execution
 
     @staticmethod
     def _execution_start(execution: PipelineExecution):
@@ -73,7 +87,10 @@ class PipelineExecutor:
         execution.store_state()
         log_msg = f"Execution Finished - {execution.status} - {execution.pipeline.logged_name()}"
         execution.logger.info("\n" + StringUtils.format_pipeline_header(log_msg))
-        if not execution.is_nested:
-            execution.logger.info(f"\n{ReportSummaryTable.generate_summary_table(execution=execution)}")
-            DebugDataCollector.collect_debug_data(execution=execution)
-        execution.logger.handlers.clear() # clean up Logger
+        execution.logger.handlers.clear()  # clean up Logger
+
+    @staticmethod
+    def _generate_summary(execution: PipelineExecution):
+        execution.store_state()
+        execution.logger.info(f"\n{ReportSummaryTable.generate_summary_table(execution=execution)}")
+        DebugDataCollector.collect_debug_data(execution=execution)

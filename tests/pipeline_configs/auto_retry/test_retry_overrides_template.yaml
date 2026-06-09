@@ -1,0 +1,21 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-retry-override
+  name: Pipeline Retry Override Test
+
+  stages:
+    - name: Spam Cmd
+      type: PYTHON_MODULE
+      command: "spam"
+      input:
+        params:
+          params:
+            param_count: 1
+            sleep_time: 0
+            sleep_period: 0.1
+
+  configuration:
+    retry:
+      limit: 3

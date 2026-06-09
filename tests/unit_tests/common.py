@@ -3,6 +3,8 @@ import logging, subprocess, unittest, functools
 
 class ExecutorTestCase(unittest.TestCase):
 
+    PDE_CLI = ["python", "-m", "pipelines_declarative_executor"]
+
     def __init__(self, methodName = "runTest"):
         super().__init__(methodName)
         self.exec_dir = None
@@ -16,9 +18,9 @@ class ExecutorTestCase(unittest.TestCase):
 
         return wrapper
 
-    def _run_and_log(self, command):
+    def _run_and_log(self, command, env=None):
         logging.info(f"Running command: {' '.join(command)}")
-        result = subprocess.run(command, capture_output=True, text=True, timeout=15)
+        result = subprocess.run(command, capture_output=True, text=True, timeout=15, env=env)
         if result.stdout:
             logging.info(f"STDOUT:\n{result.stdout}")
         if result.stderr:

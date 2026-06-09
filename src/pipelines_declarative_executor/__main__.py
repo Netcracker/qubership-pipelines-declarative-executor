@@ -1,9 +1,7 @@
 import sys, asyncio, click, logging
 
-from pipelines_declarative_executor.utils.env_var_utils import EnvVar
-from pipelines_declarative_executor.utils.logging_utils import LoggingUtils
+from pipelines_declarative_executor.utils.common_setup import CommonSetup
 from pipelines_declarative_executor.utils.profiling_utils import ProfilingUtils
-from pipelines_declarative_executor.utils.python_module_utils import PythonModuleUtils
 from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 
@@ -22,8 +20,7 @@ def cli():
               type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], case_sensitive=False),
               help="Console logging level")
 def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_vars_secure: str, pipeline_dir: str, is_dry_run: bool, log_level: str):
-    setup_cli_logging(log_level)
-    PythonModuleUtils.prepare_python_module()
+    CommonSetup.setup_cli(log_level=log_level)
     logging.info(
         f'command "RUN" with params:'
         f'\n{format_param("PIPELINE_DATA", pipeline_data)}'
@@ -41,8 +38,7 @@ def __run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_vars_secure:
               type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], case_sensitive=False),
               help="Console logging level")
 def __retry_pipeline(pipeline_dir: str, retry_vars: str, log_level: str):
-    setup_cli_logging(log_level)
-    PythonModuleUtils.prepare_python_module()
+    CommonSetup.setup_cli(log_level=log_level)
     logging.info(f'command "RETRY" with params:\nPIPELINE_DIR="{pipeline_dir}"\n{format_param("RETRY_VARS", retry_vars)}'
                  f'\nLOG_LEVEL="{log_level}"')
     with (ProfilingUtils.time_it(), ProfilingUtils.profile_it(), ProfilingUtils.track_peak_usage()):
@@ -54,7 +50,7 @@ def __retry_pipeline(pipeline_dir: str, retry_vars: str, log_level: str):
 @click.option('--target_path', required=True, type=str, help="Path to resulting archive")
 @click.option('--fail_on_missing', required=False, default=False, type=bool, help="Should this command fail if archived path is not present")
 def __archive_pipeline(pipeline_dir: str, target_path: str, fail_on_missing: bool):
-    setup_cli_logging(log_env_vars=False)
+    CommonSetup.setup_cli(log_env_vars=False)
     logging.info(f'command "ARCHIVE" with params:\nPIPELINE_DIR="{pipeline_dir}"\nTARGET_PATH="{target_path}"')
     from pipelines_declarative_executor.utils.archive_utils import ArchiveUtils
     ArchiveUtils.archive(pipeline_dir, target_path, fail_on_missing, use_sops_key=True)
@@ -65,17 +61,10 @@ def __archive_pipeline(pipeline_dir: str, target_path: str, fail_on_missing: boo
 @click.option('--target_path', required=True, type=str, help="Path where it will be extracted")
 @click.option('--fail_on_missing', required=False, default=False, type=bool, help="Should this command fail if archived path is not present")
 def __unarchive_pipeline(archive_path: str, target_path: str, fail_on_missing: bool):
-    setup_cli_logging(log_env_vars=False)
+    CommonSetup.setup_cli(log_env_vars=False)
     logging.info(f'command "UNARCHIVE" with params:\nARCHIVE_PATH="{archive_path}"\nTARGET_PATH="{target_path}"')
     from pipelines_declarative_executor.utils.archive_utils import ArchiveUtils
     ArchiveUtils.unarchive(archive_path, target_path, fail_on_missing, use_sops_key=True)
-
-
-def setup_cli_logging(log_level: str = "INFO", log_env_vars: bool = True):
-    LoggingUtils.CONSOLE_LOG_LEVEL = getattr(logging, log_level.upper(), logging.INFO)
-    LoggingUtils.configure_root_logger()
-    if log_env_vars:
-        LoggingUtils.log_env_vars()
 
 
 def format_param(name: str, value: str | None) -> str:
@@ -151,13 +140,4 @@ async def retry_pipeline(pipeline_dir: str, retry_vars: str):
 
 
 if __name__ == '__main__':
-    if EnvVar.IS_LOCAL_DEBUG:
-        # local_setup()
-        setup_cli_logging("DEBUG")
-        logging.debug("=" * 60)
-        logging.warning("RUNNING IN LOCAL DEBUG MODE!")
-        with (ProfilingUtils.time_it("Total time"), ProfilingUtils.profile_it(), ProfilingUtils.track_peak_usage()):
-            logging.info("Local Debug run")
-            # asyncio.run(local_main_debug())
-    else:
-        cli()
+    cli()

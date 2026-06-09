@@ -8,8 +8,6 @@ with_exec_dir = ExecutorTestCase.with_exec_dir
 #@unittest.skip("skipping...")
 class TestPipelinesDeclarativeExecutor(ExecutorTestCase):
 
-    PDE_CLI = ["python", "-m", "pipelines_declarative_executor"]
-
     def setUp(self):
         logging.info(os.getcwd())
 
@@ -100,6 +98,22 @@ class TestPipelinesDeclarativeExecutor(ExecutorTestCase):
         report_stage_path = Path(report["stages"][3]["execDir"])
         self.assertTrue(report_stage_path.joinpath("input_files").joinpath("pipeline_report.json").exists())
         self.assertTrue(Path(f'{self.exec_dir}/pipeline_output/output_files/report.html').exists())
+
+    @with_exec_dir
+    def test_run_auto_stage_retry(self):
+        pipeline_data = "pipeline_configs/auto_retry/test_stage_retry.yaml"
+        output = self._run_and_log([*self.PDE_CLI, "run",
+                                    f"--pipeline_data={pipeline_data}",
+                                    f"--pipeline_dir={self.exec_dir}"])
+        self.assertEqual(output.returncode, 0)
+
+    @with_exec_dir
+    def test_run_auto_pipeline_retry(self):
+        pipeline_data = "pipeline_configs/auto_retry/test_pipeline_retry.yaml"
+        output = self._run_and_log([*self.PDE_CLI, "run",
+                                    f"--pipeline_data={pipeline_data}",
+                                    f"--pipeline_dir={self.exec_dir}"])
+        self.assertEqual(output.returncode, 0)
 
     @with_exec_dir
     def test_run_conditions_pipeline(self):

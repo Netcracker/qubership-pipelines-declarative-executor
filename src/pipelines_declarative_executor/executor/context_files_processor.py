@@ -36,10 +36,11 @@ class ContextFilesProcessor:
         stage.evaluated_params['input'] = input_calculated
 
         if stage.type == StageType.REPORT:
-            shutil.copyfile(
-                execution.state_dir.joinpath(Constants.PIPELINE_REPORT_FILE_NAME),
-                stage.exec_dir.joinpath(Constants.STAGE_INPUT_FILES_DIR_NAME).joinpath(Constants.PIPELINE_REPORT_FOR_REPORT_STAGE_FILE_NAME)
-            )
+            target_report_path = stage.exec_dir.joinpath(Constants.STAGE_INPUT_FILES_DIR_NAME).joinpath(Constants.PIPELINE_REPORT_FOR_REPORT_STAGE_FILE_NAME)
+            shutil.copyfile(execution.state_dir.joinpath(Constants.PIPELINE_REPORT_FILE_NAME), target_report_path)
+
+        if stage.is_first_run() and stage.retry is not None: # won't re-evaluate retry config on stage-retry
+            stage.evaluated_params['retry'] = CommonUtils.calculate_dict_values(execution, stage.retry)
 
     @staticmethod
     def _copy_context_files(src_path: Path, dst_path: str,

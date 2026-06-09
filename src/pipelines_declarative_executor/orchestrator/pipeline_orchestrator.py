@@ -116,6 +116,7 @@ class PipelineOrchestrator:
         pipeline.id = str(uuid.uuid4())
         pipeline.name = vars_obj.calculate_expression(pipeline_data.get('name', 'Atlas Pipeline'))
         pipeline.configuration = {**merged_template.configuration, **pipeline_data.get('configuration', {})}
+        PipelineOrchestrator._calculate_pipeline_retry_config(pipeline, vars_obj)
 
         flattened_stages = PipelineOrchestrator._flatten_stage_dicts(pipeline_data.get('stages', []))
         for stage_index, stage_data in enumerate(flattened_stages):
@@ -174,6 +175,10 @@ class PipelineOrchestrator:
         stage.id = StringUtils.get_safe_filename(f"{stage_index}_{stage.name.lower()}")
         stage.uuid = str(uuid.uuid4())
 
+        if (retry := merged_stage_data.get('retry')) is not None:
+            stage.retry = retry
+            PipelineOrchestrator._validate_stage_retry_config(stage)
+
         if parallel_block := merged_stage_data.get('parallel', []):
             if isinstance(parallel_block, dict):
                 parallel_block = list(parallel_block.values())
@@ -187,6 +192,20 @@ class PipelineOrchestrator:
             raise Exception(f"Unknown stage type: {stage.type} (in stage {stage.name} - {stage.id})")
 
         return stage
+
+    @staticmethod
+    def _validate_stage_retry_config(stage: Stage):
+        if not isinstance(stage.retry, dict):
+            stage.retry = {}
+
+    @staticmethod
+    def _calculate_pipeline_retry_config(pipeline: Pipeline, vars_obj: PipelineVars):
+        if pipeline.configuration.get('retry') is None:
+            return
+        if not isinstance(pipeline.configuration.get('retry'), dict):
+            pipeline.configuration['retry'] = {}
+        retry_config = pipeline.configuration.get('retry')
+        pipeline.configuration['retry'] = CommonUtils.calculate_dict_values(None, retry_config, vars_obj)
 
     @staticmethod
     def _load_yaml_content(file_path: str) -> AtlasMetaFile:

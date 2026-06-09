@@ -1,15 +1,10 @@
-import os, logging, unittest, uuid
+import os, unittest, uuid
 from pathlib import Path
 
 from common import ExecutorTestCase
 
 
 class TestUtilityCommands(ExecutorTestCase):
-
-    PDE_CLI = ["python", "-m", "pipelines_declarative_executor"]
-
-    def setUp(self):
-        logging.info(os.getcwd())
 
     def test_help_option(self):
         output = self._run_and_log([*self.PDE_CLI, "--help"])
@@ -44,6 +39,48 @@ class TestUtilityCommands(ExecutorTestCase):
                                     "--target_path=TARGET.zip", "--fail_on_missing=true"])
         self.assertEqual(output.returncode, 1)
         self.assertTrue("Trying to archive non-existent path" in output.stdout + output.stderr)
+
+
+class TestStringUtils(unittest.TestCase):
+
+    def setUp(self):
+        from pipelines_declarative_executor.utils.string_utils import StringUtils
+        self.duration_str_to_seconds = StringUtils.duration_str_to_seconds
+
+    def test_duration_str_to_seconds(self):
+        # plain seconds
+        self.assertEqual(self.duration_str_to_seconds("0s"), 0)
+        self.assertEqual(self.duration_str_to_seconds("5s"), 5)
+        self.assertEqual(self.duration_str_to_seconds("0.5s"), 0.5)
+        self.assertEqual(self.duration_str_to_seconds("10.75s"), 10.75)
+
+        # default unit is seconds when omitted
+        self.assertEqual(self.duration_str_to_seconds("5"), 5)
+        self.assertEqual(self.duration_str_to_seconds("0"), 0)
+
+        # minutes
+        self.assertEqual(self.duration_str_to_seconds("1m"), 60)
+        self.assertEqual(self.duration_str_to_seconds("2m"), 120)
+        self.assertEqual(self.duration_str_to_seconds("0.5m"), 30)
+
+        # hours
+        self.assertEqual(self.duration_str_to_seconds("1h"), 3600)
+        self.assertEqual(self.duration_str_to_seconds("2h"), 7200)
+        self.assertEqual(self.duration_str_to_seconds("0.5h"), 1800)
+
+        # whitespace tolerance
+        self.assertEqual(self.duration_str_to_seconds("  5s  "), 5)
+        self.assertEqual(self.duration_str_to_seconds(" 1 m "), 60)
+
+        # large values
+        self.assertEqual(self.duration_str_to_seconds("3600s"), 3600)
+        self.assertEqual(self.duration_str_to_seconds("120m"), 7200)
+        self.assertEqual(self.duration_str_to_seconds("24h"), 86400)
+
+        # invalid cases
+        for invalid in ["", "abc", "5x", "-1s", "1.2.3s"]:
+            with self.assertRaises(ValueError, msg=f"Expected ValueError for '{invalid}'"):
+                self.duration_str_to_seconds(invalid)
 
 
 if __name__ == '__main__':

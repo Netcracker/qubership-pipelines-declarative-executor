@@ -74,11 +74,12 @@ class CommonUtils:
         return exec_dir
 
     @staticmethod
-    def calculate_dict_values(execution: 'PipelineExecution', input_dict: dict) -> dict:
+    def calculate_dict_values(execution: 'PipelineExecution', input_dict: dict, vars_obj: 'PipelineVars' = None) -> dict:
+        pipeline_vars = vars_obj if vars_obj else execution.vars
         calculated_dict = {}
         if input_dict:
             for path, value in CommonUtils.traverse(input_dict):
-                value_calculated = execution.vars.calculate_expression(value)
+                value_calculated = pipeline_vars.calculate_expression(value)
                 UtilsDictionary.setitem_by_path(calculated_dict, path, value_calculated)
         return calculated_dict
 

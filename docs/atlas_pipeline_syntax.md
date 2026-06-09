@@ -282,6 +282,38 @@ pipeline:
         
 ```
 
+### Auto-Retry
+
+Stages and pipelines can be configured to automatically retry on failure.
+
+```yaml
+stages:
+  - name: Flaky Stage
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        max_duration: 60s
+```
+
+Pipeline-level retry is configured under `configuration.retry`:
+
+```yaml
+configuration:
+  retry:
+    limit: 2
+```
+
+Parameters:
+
+- `limit` — max retry attempts (`-1` for unlimited, default `5`)
+- `backoff.duration` — base delay (default `5s`)
+- `backoff.factor` — exponential multiplier (default `2`)
+- `backoff.max_duration` — cap on delay
+
+Stage-level retry reruns only the failed stage. Pipeline-level retry reruns the entire pipeline using the same processing logic as manual retry (e.g. not re-executing previous successful stages).
+
 ### Execution Directory Structure
 
 Pipeline execution directory has the following structure:

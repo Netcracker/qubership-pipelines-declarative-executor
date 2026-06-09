@@ -50,6 +50,17 @@ class StringUtils:
         strings = list(map(lambda x: str(int(x)).zfill(2), parts))
         return ":".join(strings)
 
+    @staticmethod
+    def duration_str_to_seconds(duration_str: str) -> float:
+        duration_str = duration_str.strip()
+        match = re.match(r'^(\d+(?:\.\d+)?)\s*([smh])?$', duration_str)
+        if not match:
+            raise ValueError(f"Invalid duration format: {duration_str}")
+        value = float(match.group(1))
+        unit = match.group(2) if match.group(2) else 's'
+        multipliers = {'s': 1, 'm': 60, 'h': 3600}
+        return value * multipliers[unit]
+
     UNSAFE_FILENAME_CHARS_PATTERN = re.compile(r'[^\w\-.]')
     @staticmethod
     def get_safe_filename(s: str) -> str:

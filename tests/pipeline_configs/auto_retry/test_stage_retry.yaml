@@ -1,0 +1,23 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: stage-level-retry-test
+  name: Stage-Level Retry Test
+
+  stages:
+    - name: Might-Fail-Stage
+      type: PYTHON_MODULE
+      command: "debug"
+      input:
+        params:
+          params:
+            failure_chance: 0.8
+      retry:
+        limit: -1
+        backoff:
+          max_duration: 0.1s
+
+    - name: Test Cmd
+      type: SHELL_COMMAND
+      command: echo 123
