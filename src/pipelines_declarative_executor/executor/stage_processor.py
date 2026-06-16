@@ -148,6 +148,12 @@ class StageProcessor:
             if EnvVar.ENABLE_STAGE_RESOURCE_USAGE_PROFILING:
                 await StageProcessor._run_shell_command_finalize(stage, profiling_task, metrics)
 
+        # Normal failure exits with a positive code, negative means our subprocess was killed by a signal - cancel case
+        # Can also be a false positive due to OOM - but we can still treat that as cancellation
+        if process and process.returncode is not None and process.returncode < 0:
+            execution.logger.warning(f"Shell subprocess for stage {stage.logged_name()} was terminated by signal {-process.returncode} - treating as cancellation")
+            raise asyncio.CancelledError
+
         await StageProcessor._run_shell_command_log(stage, execution, process, stdout, stderr, expected_return_code, logged_cmd_name)
 
 

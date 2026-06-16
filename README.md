@@ -57,6 +57,8 @@ There's also an example of a similar implementation [for GitLab](docs/gitlab/.gi
 When you've created your own Docker image with necessary "Python Modules" (non-sample ones), you might want to create your own workflows using that image.
 Provided workflows serve as a starting point, but custom workflows will allow full control and ability to pass env variables and local files.
 
+Cancellation of running pipeline via native GH/GL UI button is also supported.
+
 ## Features
 
 ### Atlas Pipeline definitions

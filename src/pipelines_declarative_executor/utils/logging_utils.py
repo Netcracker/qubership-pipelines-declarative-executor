@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from logging import Logger
 from pathlib import Path
 
-from pipelines_declarative_executor.utils.color_utils import ColoredFormatter
+from pipelines_declarative_executor.utils.color_utils import ColoredFormatter, ColorUtils
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 
 
@@ -93,23 +93,25 @@ class LoggingUtils:
         for section, var_names in logged_vars.items():
             env_info += f"\n> {section}:\n"
             env_info += "\n".join([f"    {var_name}: {getattr(EnvVar, var_name)}" for var_name in var_names])
-        logging.info(env_info)
+        with LoggingUtils.collapsible_section(header=ColorUtils.with_color(message=" Environment Variables", color=ColorUtils.SUCCESS_COLOR), section_id="env_vars"):
+            logging.info(env_info)
 
     @staticmethod
     @contextmanager
-    def collapsible_section(header: str = "Collapsible section", stage = None):
+    def collapsible_section(header: str = "Collapsible section", stage = None, section_id: str = None):
         if not EnvVar.ENABLE_COLLAPSIBLE_CI_LOGS:
             yield
             return
         gl_timestamp = int(time.time())
+        section_id = section_id or (stage.uuid if stage else "section")
         if EnvVar.IS_GITHUB:
             print(f"::group::{header}")
         if EnvVar.IS_GITLAB:
-            print(f"\033[0Ksection_start:{gl_timestamp}:{stage.uuid}[collapsed=true]\r\033[0K ▶{header}")
+            print(f"\033[0Ksection_start:{gl_timestamp}:{section_id}[collapsed=true]\r\033[0K ▶{header}")
         try:
             yield
         finally:
             if EnvVar.IS_GITHUB:
                 print("::endgroup::")
             if EnvVar.IS_GITLAB:
-                print(f"\033[0Ksection_end:{gl_timestamp}:{stage.uuid}\r\033[0K")
+                print(f"\033[0Ksection_end:{gl_timestamp}:{section_id}\r\033[0K")
