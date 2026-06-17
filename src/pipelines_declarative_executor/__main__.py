@@ -1,4 +1,4 @@
-import sys, asyncio, click, logging
+import sys, asyncio, click, logging, signal
 
 from pipelines_declarative_executor.utils.common_setup import CommonSetup
 from pipelines_declarative_executor.utils.profiling_utils import ProfilingUtils
@@ -90,11 +90,27 @@ def format_pipeline_vars(pipeline_vars: str | None, pipeline_vars_secure: str | 
     return "PIPELINE_VARS: None"
 
 
+def install_cancellation_handlers():
+    loop = asyncio.get_running_loop()
+    main_task = asyncio.current_task()
+
+    def _cancel(signame: str):
+        logging.warning(f"Received {signame} - cancelling pipeline execution...")
+        main_task.cancel()
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            loop.add_signal_handler(sig, _cancel, sig.name)
+        except (NotImplementedError, RuntimeError):
+            pass
+
+
 async def create_and_run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_vars_secure: str, pipeline_dir: str, is_dry_run: bool):
     from pipelines_declarative_executor.orchestrator.pipeline_orchestrator import PipelineOrchestrator
     from pipelines_declarative_executor.executor.pipeline_executor import PipelineExecutor
     from pipelines_declarative_executor.report.report_uploader import ReportUploader
     from pipelines_declarative_executor.model.stage import ExecutionStatus
+    install_cancellation_handlers()
     try:
         pipeline_execution = PipelineOrchestrator.prepare_pipeline_execution(
             pipeline_data=pipeline_data,
@@ -120,6 +136,7 @@ async def retry_pipeline(pipeline_dir: str, retry_vars: str):
     from pipelines_declarative_executor.executor.pipeline_executor import PipelineExecutor
     from pipelines_declarative_executor.report.report_uploader import ReportUploader
     from pipelines_declarative_executor.model.stage import ExecutionStatus
+    install_cancellation_handlers()
     try:
         pipeline_execution = PipelineRetryOrchestrator.prepare_retry_execution(
             pipeline_dir=pipeline_dir,
