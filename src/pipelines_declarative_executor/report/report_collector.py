@@ -92,6 +92,8 @@ class ReportCollector:
                     stage_data[params_type]["params_secure"] = ReportCollector._mask_secure_params(key="params_secure", data=params_secure)
             stage_data.pop("retry", None)
 
+        stage_data["command"] = StringUtils.shorten_command(stage.command) # show non-evaluated value
+
         if stage.type == StageType.PARALLEL_BLOCK:
             stage_data[ReportCollector.PARALLEL_STAGES] = []
             for nested_stage in stage.nested_parallel_stages:

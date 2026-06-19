@@ -1,0 +1,29 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-shell-output-linux
+  name: Shell Output Pipeline (Linux)
+
+  stages:
+    - name: Produce Number
+      type: SHELL_COMMAND
+      command: |
+        echo 'params: {NUMBER: 21}' > output_params.yaml
+      output:
+        params:
+          NUMBER: "params.NUMBER"
+
+    - name: Double Number
+      type: SHELL_COMMAND
+      command: |
+        echo "params: {RESULT: $(( ${NUMBER} * 2 ))}" > output_params.yaml
+      output:
+        params:
+          RESULT: "params.RESULT"
+
+  configuration:
+    output:
+      params:
+        params:
+          FINAL_RESULT: ${RESULT}

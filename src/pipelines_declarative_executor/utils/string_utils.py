@@ -26,19 +26,28 @@ class StringUtils:
     VAR_PATTERN = re.compile(r'\$\{([a-zA-Z_]\w*)\}|\$([a-zA-Z_]\w*)')
     VAR_MAX_NESTING_LEVEL = 100
     @staticmethod
-    def substitute_string(known_vars=None, *, expression=None) -> str:
+    def substitute_string(known_vars=None, *, expression=None, secure_keys=None, mask_secrets=False) -> tuple[str, bool]:
         if known_vars is None:
             known_vars = os.environ
+        if secure_keys is None:
+            secure_keys = ()
         if not isinstance(expression, str):
-            return StringUtils.cast_to_string(expression)
+            return StringUtils.cast_to_string(expression), False
         description = f"expression '{expression}'"
         value = expression
+        used_secure = False
+        def _replace(m):
+            nonlocal used_secure
+            key = m[1] or m[2]
+            if key in secure_keys:
+                used_secure = True
+                if mask_secrets:
+                    return Constants.DEFAULT_MASKED_VALUE
+            return StringUtils.cast_to_string(known_vars.get(key))
         for _ in range(StringUtils.VAR_MAX_NESTING_LEVEL):
-            value, repl_n = re.subn(StringUtils.VAR_PATTERN, lambda m: StringUtils.cast_to_string(known_vars.get(m[1] or m[2])), value)
-            if repl_n:
-                pass
-            else:
-                return value
+            value, repl_n = re.subn(StringUtils.VAR_PATTERN, _replace, value)
+            if not repl_n:
+                return value, used_secure
         raise ValueError(f"Variables substitution exceeded {StringUtils.VAR_MAX_NESTING_LEVEL} nesting levels for {description}")
 
     @staticmethod
@@ -167,3 +176,15 @@ class StringUtils:
             result.append(indent + prefix + line)
         result.append(indent + bottom_border)
         return "\n".join(result)
+
+    @staticmethod
+    def shorten_command(command: str, max_len: int = 30) -> str:
+        if not command:
+            return command
+        lines = [ln for ln in (line.strip() for line in StringUtils.normalize_line_endings(command).split('\n')) if ln]
+        if len(lines) <= 1 and len(command) <= max_len:
+            return command
+        trimmed = '; '.join(lines)
+        if len(trimmed) > max_len:
+            trimmed = trimmed[:max_len].rstrip() + '...'
+        return trimmed

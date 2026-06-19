@@ -74,14 +74,19 @@ class CommonUtils:
         return exec_dir
 
     @staticmethod
-    def calculate_dict_values(execution: 'PipelineExecution', input_dict: dict, vars_obj: 'PipelineVars' = None) -> dict:
+    def calculate_dict_values(execution: 'PipelineExecution', input_dict: dict, vars_obj: 'PipelineVars' = None, mask_secrets=False) -> tuple[dict, bool]:
         pipeline_vars = vars_obj if vars_obj else execution.vars
         calculated_dict = {}
+        used_secure = False
         if input_dict:
             for path, value in CommonUtils.traverse(input_dict):
-                value_calculated = pipeline_vars.calculate_expression(value)
+                if mask_secrets:
+                    value_calculated, value_used_secure = pipeline_vars.calculate_expression_safe(value), False
+                else:
+                    value_calculated, value_used_secure = pipeline_vars.calculate_expression(value)
+                used_secure = used_secure or value_used_secure
                 UtilsDictionary.setitem_by_path(calculated_dict, path, value_calculated)
-        return calculated_dict
+        return calculated_dict, used_secure
 
     @staticmethod
     def calculate_final_status(stages: list[Stage]) -> ExecutionStatus:

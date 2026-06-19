@@ -1,6 +1,7 @@
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
 from pipelines_declarative_executor.model.stage import When, ExecutionStatus
 from pipelines_declarative_executor.model.exceptions import PipelineExecutorException
+from pipelines_declarative_executor.utils.constants import Constants
 
 
 class ConditionProcessor:
@@ -21,10 +22,11 @@ class ConditionProcessor:
         if not when.condition:
             return True
         try:
-            condition = execution.vars.calculate_expression(when.condition)
-            result = eval(condition, execution.vars.all_vars())
-            execution.logger.debug(f"Condition ('{condition}') evaluation result: {bool(result)}")
+            calculated_condition, used_secure = execution.vars.calculate_expression(when.condition)
+            result = eval(calculated_condition, execution.vars.all_vars())
+            execution.logger.debug(f"Condition evaluation: {when.condition} -> {Constants.DEFAULT_MASKED_VALUE if used_secure else calculated_condition} -> {bool(result)}")
             return bool(result)
-        except Exception as e:
-            execution.logger.error(f"Error during calculation of condition - '{when.condition}' - {e}")
-            raise PipelineExecutorException(e)
+        except Exception:
+            msg = f"Error during calculation of condition - '{when.condition}'!"
+            execution.logger.error(msg)
+            raise PipelineExecutorException(msg)

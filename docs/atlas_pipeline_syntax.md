@@ -54,6 +54,24 @@ Stage has optional configurable `path` field - if it's not defined, it will be p
 You can use this field to invoke commands from different "Python Modules", available inside your Docker image.
 And you can omit it when working with one default "Python Module", that you've put to predefined env var during Docker image assembly.
 
+### Shell commands (`SHELL_COMMAND`)
+
+Use the `command` field to run a shell command or a multi-line script, similar to a GitHub/GitLab `run:` step:
+
+```yaml
+- name: Sample Command
+  type: SHELL_COMMAND
+  command: |
+    echo "preparing..."
+    ls -la
+    echo "done!"
+```
+
+Behavior:
+
+- **Multi-line, fail-fast.** The `command` is executed using native OS shell (scripts themselves should differ depending on underlying runner OS). On Windows, multiline is aggregated via "&&" concatenation - meaning no multiline block support.
+- **Runs in the stage folder.** The subprocess starts with its working directory set to the stage's execution folder, so you can read the prepared `input_params.yaml` / `input_files/` and write outputs using simple relative paths.
+
 ### Inputs and Outputs
 
 Stages can define complex input and output configurations.
@@ -140,7 +158,6 @@ jobs:
   
   template-shell-stage:
     type: SHELL_COMMAND
-    path: "/bin/bash"
 ```
 
 ### Variable Substitution
@@ -307,12 +324,24 @@ configuration:
 
 Parameters:
 
-- `limit` — max retry attempts (`-1` for unlimited, default `5`)
-- `backoff.duration` — base delay (default `5s`)
-- `backoff.factor` — exponential multiplier (default `2`)
-- `backoff.max_duration` — cap on delay
+- `limit` - max retry attempts (`-1` for unlimited, default `5`)
+- `backoff.duration` - base delay (default `5s`)
+- `backoff.factor` - exponential multiplier (default `2`)
+- `backoff.max_duration` - cap on delay
 
 Stage-level retry reruns only the failed stage. Pipeline-level retry reruns the entire pipeline using the same processing logic as manual retry (e.g. not re-executing previous successful stages).
+
+### Secure Variables
+
+Some variables are treated as **secure** (secret).
+A variable is considered secure when it comes from a **SOPS-encrypted file**, or from the dedicated **`pipeline_vars_secure`** input argument (a stage's `output.params_secure` also stays secure for downstream stages).
+
+Secure values are substituted with their **real** value only inside `input`, `command`, and `when.condition` blocks - the places where a secret is needed at runtime.
+In any other location they are substituted with the `[MASKED]` placeholder instead of the real value.
+
+**Strict mode** (`PIPELINES_DECLARATIVE_EXECUTOR_STRICT_MODE`, enabled by default) enforces this masking.
+While enabled, it additionally hides `SHELL_COMMAND` output (`stdout`/`stderr`) whenever the command references a secure variable.
+Disabling strict mode turns the masking off, and secure values are then substituted and logged as-is everywhere - intended for debugging only.
 
 ### Execution Directory Structure
 

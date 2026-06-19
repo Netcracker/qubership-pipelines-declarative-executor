@@ -1,0 +1,15 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-shell-multiline
+  name: Shell Multiline Pipeline
+
+  stages:
+    - name: Multiline Echo
+      type: SHELL_COMMAND
+      command: |
+        echo "line one"
+        echo "line two"
+        echo "line three"
+        echo "marker content" > marker.txt

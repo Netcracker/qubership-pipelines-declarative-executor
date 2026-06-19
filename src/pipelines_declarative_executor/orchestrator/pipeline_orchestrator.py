@@ -9,9 +9,11 @@ from pipelines_declarative_executor.model.pipeline import PipelineExecution, Pip
 from pipelines_declarative_executor.model.stage import ExecutionStatus, StageType, VALID_STAGE_TYPES
 from pipelines_declarative_executor.utils.auth_utils import AuthConfig
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
+from pipelines_declarative_executor.utils.constants import Constants
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 from pipelines_declarative_executor.utils.sops_utils import SOPS, SopsUtils
 from pipelines_declarative_executor.utils.string_utils import StringUtils
+from pipelines_declarative_executor.x_modules_ops.dict_utils import UtilsDictionary
 
 
 class PipelineOrchestrator:
@@ -114,7 +116,7 @@ class PipelineOrchestrator:
         jobs_templates = {**merged_template.job_templates, **pipeline_data.get('jobs', {})}
 
         pipeline.id = str(uuid.uuid4())
-        pipeline.name = vars_obj.calculate_expression(pipeline_data.get('name', 'Atlas Pipeline'))
+        pipeline.name = vars_obj.calculate_expression_safe(pipeline_data.get('name', 'Atlas Pipeline'))
         pipeline.configuration = {**merged_template.configuration, **pipeline_data.get('configuration', {})}
         PipelineOrchestrator._calculate_pipeline_retry_config(pipeline, vars_obj)
 
@@ -147,20 +149,20 @@ class PipelineOrchestrator:
         stage = Stage()
         job_template = {}
         if 'job' in stage_data:
-            template_name = vars_obj.calculate_expression(stage_data['job'])
+            template_name, used_secure = vars_obj.calculate_expression(stage_data['job'])
             job_template = jobs_templates.get(template_name)
             if not job_template:
-                raise Exception(f"Missing job-template requested: {template_name}")
+                raise Exception(f"Missing job-template requested: {Constants.DEFAULT_MASKED_VALUE if used_secure else template_name}")
         merged_stage_data = CommonUtils.recursive_merge(job_template, stage_data)
 
-        for field_name in ['name', 'type', 'path', 'command']:
+        for field_name in ['name', 'type', 'path']: # evaluated at orchestration time
             if value := merged_stage_data.get(field_name):
-                setattr(stage, field_name, vars_obj.calculate_expression(value))
+                setattr(stage, field_name, vars_obj.calculate_expression_safe(value))
 
         if not stage.path:
             stage.path = EnvVar.PYTHON_MODULE_PATH
 
-        for field_name in ['input', 'output']:
+        for field_name in ['input', 'output', 'command']: # evaluated at stage runtime
             if value := merged_stage_data.get(field_name):
                 setattr(stage, field_name, value)
 
@@ -188,6 +190,9 @@ class PipelineOrchestrator:
                 nested_stage = PipelineOrchestrator._create_stage(nested_stage_index, nested_stage_data, jobs_templates, vars_obj)
                 stage.nested_parallel_stages.append(nested_stage)
 
+        if stage.type == StageType.ATLAS_PIPELINE_TRIGGER:
+            PipelineOrchestrator._validate_stage_trigger_config(stage)
+
         if stage.type not in VALID_STAGE_TYPES:
             raise Exception(f"Unknown stage type: {stage.type} (in stage {stage.name} - {stage.id})")
 
@@ -199,13 +204,23 @@ class PipelineOrchestrator:
             stage.retry = {}
 
     @staticmethod
+    def _validate_stage_trigger_config(stage: Stage):
+        if stage.input:
+            pd = UtilsDictionary.get_by_path(stage.input, "params.params.PIPELINE_DATA")
+            pd_secure = UtilsDictionary.get_by_path(stage.input, "params_secure.params.PIPELINE_DATA")
+            if pd or pd_secure:
+                return
+        raise Exception(f"Invalid ATLAS_PIPELINE_TRIGGER input format (in stage {stage.name} - {stage.id}):"
+                        " expected 'input.params.params.PIPELINE_DATA' or 'input.params_secure.params.PIPELINE_DATA'!")
+
+    @staticmethod
     def _calculate_pipeline_retry_config(pipeline: Pipeline, vars_obj: PipelineVars):
         if pipeline.configuration.get('retry') is None:
             return
         if not isinstance(pipeline.configuration.get('retry'), dict):
             pipeline.configuration['retry'] = {}
         retry_config = pipeline.configuration.get('retry')
-        pipeline.configuration['retry'] = CommonUtils.calculate_dict_values(None, retry_config, vars_obj)
+        pipeline.configuration['retry'], used_secure = CommonUtils.calculate_dict_values(None, retry_config, vars_obj, mask_secrets=True)
 
     @staticmethod
     def _load_yaml_content(file_path: str) -> AtlasMetaFile:
