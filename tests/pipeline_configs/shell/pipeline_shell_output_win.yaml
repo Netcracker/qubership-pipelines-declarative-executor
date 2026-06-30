@@ -1,0 +1,29 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-shell-output-win
+  name: Shell Output Pipeline (Windows)
+
+  stages:
+    - name: Produce Number
+      type: SHELL_COMMAND
+      command: |
+        echo params: {NUMBER: 21}> output_params.yaml
+      output:
+        params:
+          NUMBER: "params.NUMBER"
+
+    - name: Double Number
+      type: SHELL_COMMAND
+      command: |
+        for /f "delims=" %i in ('set /a ${NUMBER}*2') do @echo params: {RESULT: %i}> output_params.yaml
+      output:
+        params:
+          RESULT: "params.RESULT"
+
+  configuration:
+    output:
+      params:
+        params:
+          FINAL_RESULT: ${RESULT}

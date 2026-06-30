@@ -1,0 +1,11 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-secure-masking
+  name: Secure Masking Pipeline ${SECRET_VALUE}
+
+  stages:
+    - name: Secret Echo Stage ${SECRET_VALUE}
+      type: SHELL_COMMAND
+      command: echo ${SECRET_VALUE}

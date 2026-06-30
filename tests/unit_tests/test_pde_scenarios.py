@@ -116,6 +116,51 @@ class TestPipelinesDeclarativeExecutor(ExecutorTestCase):
         self.assertEqual(output.returncode, 0)
 
     @with_exec_dir
+    def test_run_shell_multiline_pipeline(self):
+        pipeline_data = "pipeline_configs/shell/pipeline_shell_multiline.yaml"
+        output = self._run_and_log([*self.PDE_CLI, "run",
+                                    f"--pipeline_data={pipeline_data}",
+                                    f"--pipeline_dir={self.exec_dir}"])
+        self.assertEqual(output.returncode, 0)
+        combined_output = output.stdout + output.stderr
+        for expected_line in ["line one", "line two", "line three"]:
+            self.assertIn(expected_line, combined_output)
+
+        with open(f'{self.exec_dir}/pipeline_state/pipeline_report.json', 'r', encoding='utf-8') as report_json_file:
+            report = json.load(report_json_file)
+        stage = report["stages"][0]
+        # assert multiline/long command is shortened
+        self.assertTrue(stage["command"].endswith("..."))
+        # file from last command was created in stage's dir (with cwd dir specification)
+        marker_path = Path(stage["execDir"]).joinpath("marker.txt")
+        self.assertTrue(marker_path.exists())
+        self.assertIn("marker content", marker_path.read_text(encoding="utf-8"))
+
+    @with_exec_dir
+    def test_run_shell_failfast_pipeline(self):
+        pipeline_data = "pipeline_configs/shell/pipeline_shell_failfast.yaml"
+        output = self._run_and_log([*self.PDE_CLI, "run",
+                                    f"--pipeline_data={pipeline_data}",
+                                    f"--pipeline_dir={self.exec_dir}"])
+        self.assertEqual(output.returncode, 1)
+        with open(f'{self.exec_dir}/pipeline_state/pipeline_report.json', 'r', encoding='utf-8') as report_json_file:
+            report = json.load(report_json_file)
+        stage_exec_dir = Path(report["stages"][0]["execDir"])
+        self.assertTrue(stage_exec_dir.joinpath("before.txt").exists())
+        self.assertFalse(stage_exec_dir.joinpath("after.txt").exists())
+
+    @with_exec_dir
+    def test_run_shell_output_pipeline(self):
+        pipeline_data = "pipeline_configs/shell/pipeline_shell_output_linux.yaml"
+        output = self._run_and_log([*self.PDE_CLI, "run",
+                                    f"--pipeline_data={pipeline_data}",
+                                    f"--pipeline_dir={self.exec_dir}"])
+        self.assertEqual(output.returncode, 0)
+        with open(f'{self.exec_dir}/pipeline_output/output_params.yaml', 'r', encoding='utf-8') as file:
+            result = yaml.safe_load(file)
+            self.assertEqual('42',  result['params']['FINAL_RESULT'])
+
+    @with_exec_dir
     def test_run_conditions_pipeline(self):
         pipeline_data = "pipeline_configs/conditions/pipeline_conditions.yaml"
         output = self._run_and_log([*self.PDE_CLI, "run",

@@ -23,7 +23,11 @@ class ContextFilesProcessor:
         job_data_registry.write_context_descriptor()
 
         input_calculated = {'params': {}, 'params_secure': {}, 'files': {}}
-        input_calculated.update(CommonUtils.calculate_dict_values(execution, stage.input))
+        for input_key, input_block in (stage.input or {}).items():
+            calculated_block, used_secure = CommonUtils.calculate_dict_values(execution, input_block)
+            input_calculated[input_key] = calculated_block
+            if used_secure and input_key != 'params_secure':
+                execution.logger.warning(f"Stage {stage.id} references secure variables in 'input.{input_key}'! Resolved value will be exposed in logs/report/summary - move them to 'input.params_secure'!")
         job_data_registry.write_input_params(input_calculated.get('params'))
         job_data_registry.write_input_params_secure(input_calculated.get('params_secure'))
 
@@ -40,7 +44,9 @@ class ContextFilesProcessor:
             shutil.copyfile(execution.state_dir.joinpath(Constants.PIPELINE_REPORT_FILE_NAME), target_report_path)
 
         if stage.is_first_run() and stage.retry is not None: # won't re-evaluate retry config on stage-retry
-            stage.evaluated_params['retry'] = CommonUtils.calculate_dict_values(execution, stage.retry)
+            stage.evaluated_params['retry'], _ = CommonUtils.calculate_dict_values(execution, stage.retry, mask_secrets=True)
+        stage.evaluated_params['command'], used_secure = execution.vars.calculate_expression(stage.command)
+        stage.custom_data['command_used_secure'] = used_secure
 
     @staticmethod
     def _copy_context_files(src_path: Path, dst_path: str,
@@ -68,7 +74,7 @@ class ContextFilesProcessor:
         if not stage_dir:
             stage_dir = stage.exec_dir
         job_data_registry = JobDataRegistry(stage_dir)
-        output_cfg = CommonUtils.calculate_dict_values(execution, stage.output)
+        output_cfg, _ = CommonUtils.calculate_dict_values(execution, stage.output)
 
         # STORING PARAMS
         output_params = HierarchicalDict.wrap(JobDataRegistry.read_descriptor_from_file(job_data_registry.output_params_filepath))
@@ -119,7 +125,7 @@ class ContextFilesProcessor:
         pipeline_data_registry = JobDataRegistry(execution.output_dir)
         # pipeline_data_registry.write_context_descriptor()  # we don't need 'context.yaml' at this point?
 
-        output_calculated = CommonUtils.calculate_dict_values(execution, output_config)
+        output_calculated, _ = CommonUtils.calculate_dict_values(execution, output_config)
         pipeline_data_registry.write_output_params(output_calculated.get('params', {}))
         pipeline_data_registry.write_output_params_secure(output_calculated.get('params_secure', {}))
 

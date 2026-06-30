@@ -1,4 +1,4 @@
-import asyncio
+import os, asyncio
 from datetime import datetime
 
 from pipelines_declarative_executor.executor.condition_processor import ConditionProcessor
@@ -44,13 +44,9 @@ class StageProcessor:
 
         try:
             ContextFilesProcessor.prepare_stage_folder(execution, stage, parent_stage)
-            if stage.type in [StageType.PYTHON_MODULE, StageType.REPORT]:
-                command = (f"python {stage.path} {stage.command} "
-                           f"--context_path={stage.exec_dir.joinpath('context.yaml')} "
-                           f"--log-level={LoggingUtils.get_log_level_name()}")
-                await StageProcessor._run_shell_command(stage, execution, command, logged_cmd_name=f"{stage.path} {stage.command}")
-            elif stage.type == StageType.SHELL_COMMAND:
-                await StageProcessor._run_shell_command(stage, execution, stage.command, logged_cmd_name=stage.command)
+            if stage.type in [StageType.PYTHON_MODULE, StageType.REPORT, StageType.SHELL_COMMAND]:
+                command, logged_cmd_name = StageProcessor._build_shell_command(stage)
+                await StageProcessor._run_shell_command(stage, execution, command, logged_cmd_name=logged_cmd_name)
             elif stage.type == StageType.PARALLEL_BLOCK:
                 await StageProcessor._run_parallel_block(execution, stage)
             elif stage.type == StageType.ATLAS_PIPELINE_TRIGGER:
@@ -110,6 +106,25 @@ class StageProcessor:
         execution.store_state()
 
     @staticmethod
+    def _build_shell_command(stage: Stage) -> tuple[str, str]:
+        if stage.type == StageType.SHELL_COMMAND:
+            command = StringUtils.normalize_line_endings(stage.evaluated_params.get('command') or "")
+            logged_cmd_name = StringUtils.shorten_command(stage.command)
+            if os.name == "nt":
+                command = " && ".join(ln for ln in (line.strip() for line in command.split("\n")) if ln)
+            else:
+                command = f"set -e\n{command}"
+
+        elif stage.type in [StageType.PYTHON_MODULE, StageType.REPORT]:
+            command = (f"python {stage.path} {stage.evaluated_params.get('command')} "
+                       f"--context_path={stage.exec_dir.joinpath('context.yaml')} "
+                       f"--log-level={LoggingUtils.get_log_level_name()}")
+            logged_cmd_name = f"{stage.path} {stage.command}"
+        else:
+            raise Exception(f"Invalid shell stage type - {stage.logged_name()}")
+        return command, logged_cmd_name
+
+    @staticmethod
     async def _run_shell_command(stage: Stage, execution: PipelineExecution, cmd: str, expected_return_code: int = 0,
                                  logged_cmd_name: str = "Shell Command"):
         if execution.is_dry_run:
@@ -121,7 +136,8 @@ class StageProcessor:
 
         process, stdout, stderr, profiling_task, metrics = None, None, None, None, None
         try:
-            process = await asyncio.create_subprocess_shell(cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            use_cwd = stage.type == StageType.SHELL_COMMAND
+            process = await asyncio.create_subprocess_shell(cmd, cwd=stage.exec_dir if use_cwd else None, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
             if EnvVar.ENABLE_STAGE_RESOURCE_USAGE_PROFILING and process.pid:
                 metrics = ProfilingUtils.get_profiling_metrics()
                 profiling_task = asyncio.create_task(ProfilingUtils.profile_process(pid=process.pid, metrics=metrics))
@@ -178,13 +194,15 @@ class StageProcessor:
     async def _run_shell_command_log(stage: Stage, execution: PipelineExecution, process, stdout, stderr, expected_return_code: int, logged_cmd_name: str):
         header_color = ColorUtils.SUCCESS_COLOR if process.returncode == expected_return_code else ColorUtils.FAILURE_COLOR
         header = ColorUtils.with_color(message=f" Stage Output from {stage.logged_name()}", color=header_color)
+        need_to_mask_output = EnvVar.STRICT_MODE and stage.type == StageType.SHELL_COMMAND and stage.custom_data.get('command_used_secure')
+        masked_output = StringUtils.indent_lines(f"{Constants.DEFAULT_MASKED_VALUE} - Shell output is masked in STRICT_MODE") if need_to_mask_output else None
         with LoggingUtils.collapsible_section(header=header, stage=stage):
             if stdout and EnvVar.ENABLE_MODULE_STDOUT_LOG:
-                normalized_output = StringUtils.indent_lines(StringUtils.normalize_line_endings(stdout.decode(errors="ignore").strip()))
+                normalized_output = masked_output or StringUtils.indent_lines(StringUtils.normalize_line_endings(stdout.decode(errors="ignore").strip()))
                 execution.logger.info(f'Shell STDOUT for {stage.logged_name()} (return_code={process.returncode}):\n{normalized_output}')
             if stderr or process.returncode != expected_return_code:
                 if stderr:
-                    normalized_output = StringUtils.indent_lines(StringUtils.normalize_line_endings(stderr.decode(errors="ignore").strip()))
+                    normalized_output = masked_output or StringUtils.indent_lines(StringUtils.normalize_line_endings(stderr.decode(errors="ignore").strip()))
                     execution.logger.error(f'Shell STDERR for {stage.logged_name()} (return_code={process.returncode}):\n{normalized_output}')
                 raise Exception(f"Error during {stage.logged_name()} - \"{logged_cmd_name}\"")
 
@@ -203,7 +221,7 @@ class StageProcessor:
     async def _run_nested_pipeline(execution: PipelineExecution, stage: Stage):
         try:
             execution.logger.info(f'Processing nested pipeline... (stage {stage.logged_name()})')
-            input_calculated = CommonUtils.calculate_dict_values(execution, stage.input)
+            input_calculated, _ = CommonUtils.calculate_dict_values(execution, stage.input)
 
             state_dir = stage.exec_dir.joinpath(Constants.PIPELINE_STATE_DIR_NAME)
             if (execution.is_retry and getattr(stage, StageProcessor.RETRY_NESTED_FLAG, False)

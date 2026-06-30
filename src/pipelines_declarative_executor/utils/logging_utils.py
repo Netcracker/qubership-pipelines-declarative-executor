@@ -71,7 +71,7 @@ class LoggingUtils:
                 "REPORT_UPLOAD_USE_COMPRESSION_DEFAULT"
             ],
             "ENCRYPTION": [
-                "ENCRYPT_OUTPUT_PARAMS", "FAIL_ON_MISSING_SOPS"
+                "ENCRYPT_OUTPUT_PARAMS", "FAIL_ON_MISSING_SOPS", "STRICT_MODE"
             ],
             "SUBPROCESSES": [
                 "SHELL_PROCESS_TIMEOUT", "SOPS_PROCESS_TIMEOUT"

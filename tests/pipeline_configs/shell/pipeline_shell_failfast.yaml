@@ -1,0 +1,14 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-shell-failfast
+  name: Shell Failfast Pipeline
+
+  stages:
+    - name: Failfast Echo
+      type: SHELL_COMMAND
+      command: |
+        echo "before failure" > before.txt
+        false
+        echo "after failure" > after.txt

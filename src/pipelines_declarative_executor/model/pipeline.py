@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import asyncio
+import asyncio, logging
 
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -58,8 +58,15 @@ class PipelineVars:
             **self.vars_stage_output
         }
 
-    def calculate_expression(self, exp) -> str:
-        return StringUtils.substitute_string(self.all_vars(), expression=exp)
+    def calculate_expression(self, exp) -> tuple[str, bool]:
+        result, used_secure = StringUtils.substitute_string(self.all_vars(), expression=exp, secure_keys=self.secure_vars, mask_secrets=False)
+        return result, used_secure
+
+    def calculate_expression_safe(self, exp) -> str:
+        result, used_secure = StringUtils.substitute_string(self.all_vars(), expression=exp, secure_keys=self.secure_vars, mask_secrets=EnvVar.STRICT_MODE)
+        if used_secure and not EnvVar.STRICT_MODE:
+            logging.warning(f"Expression ('{exp}') references secure variables; resolved value will be exposed in logs/report/summary - avoid using secure vars here!")
+        return result
 
     def initial_vars_with_sources(self) -> list:
         if not self._initial_vars_with_sources:
