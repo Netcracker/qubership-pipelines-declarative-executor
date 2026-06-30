@@ -29,7 +29,7 @@ spec:
 
 ---
 default:
-  image: ghcr.io/netcracker/qubership-pipelines-declarative-executor:dev_cancel #  or 'latest', or v2.1.0
+  image: ghcr.io/netcracker/qubership-pipelines-declarative-executor:dev_cancel #  or 'latest', or v2.1.1
 
 variables:
   DEFAULT_PIPELINE_DIR: "PIPELINE_DIR"
