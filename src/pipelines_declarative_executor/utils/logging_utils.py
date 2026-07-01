@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from logging import Logger
 from pathlib import Path
 
-from pipelines_declarative_executor.utils.color_utils import ColoredFormatter, ColorUtils
+from pipelines_declarative_executor.utils.color_utils import ColoredFormatter, ColorUtils, PlainFormatter
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 
 
@@ -25,7 +25,7 @@ class LoggingUtils:
         console_handler = logging.StreamHandler(stream=sys.stdout)
         console_handler.setLevel(LoggingUtils.CONSOLE_LOG_LEVEL)
         if EnvVar.NO_RICH:
-            console_handler.setFormatter(logging.Formatter(LoggingUtils.DEFAULT_FORMAT))
+            console_handler.setFormatter(PlainFormatter(LoggingUtils.DEFAULT_FORMAT))
         else:
             console_handler.setFormatter(ColoredFormatter(LoggingUtils.DEFAULT_FORMAT))
         root_logger.addHandler(console_handler)
@@ -33,7 +33,7 @@ class LoggingUtils:
         if EnvVar.ENABLE_FULL_EXECUTION_LOG:
             file_handler = logging.FileHandler(LoggingUtils.FULL_EXECUTION_LOG_NAME, encoding="utf-8")
             file_handler.setLevel(logging.DEBUG)
-            file_handler.setFormatter(logging.Formatter(LoggingUtils.DEFAULT_FORMAT))
+            file_handler.setFormatter(PlainFormatter(LoggingUtils.DEFAULT_FORMAT))
             root_logger.addHandler(file_handler)
 
         return root_logger
@@ -45,7 +45,7 @@ class LoggingUtils:
 
         file_handler = logging.FileHandler(exec_dir.joinpath(LoggingUtils.EXECUTION_LOG_NAME), encoding="utf-8")
         file_handler.setLevel(LoggingUtils.FILE_LOG_LEVEL)
-        file_handler.setFormatter(logging.Formatter(LoggingUtils.DEFAULT_FORMAT))
+        file_handler.setFormatter(PlainFormatter(LoggingUtils.DEFAULT_FORMAT))
         logger.addHandler(file_handler)
 
         return logger
@@ -58,7 +58,7 @@ class LoggingUtils:
     def log_env_vars():
         logged_vars = {
             "GENERAL": [
-                "GLOBAL_CONFIGS_PREFIX", "PYTHON_MODULE_PATH", "PREPARE_PYTHON_MODULE"
+                "PDE_VERSION", "GLOBAL_CONFIGS_PREFIX", "PYTHON_MODULE_PATH", "PREPARE_PYTHON_MODULE"
             ],
             "DEBUG": [
                 "IS_LOCAL_DEBUG", "ENABLE_FULL_EXECUTION_LOG",

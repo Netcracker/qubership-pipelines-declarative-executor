@@ -64,6 +64,10 @@ jobs:
       id: save-release-version
       run: echo "release_version=$(poetry version --short)" >> "$GITHUB_OUTPUT"
 
+    - name: Sync version references
+      if: ${{ inputs.patch_version }}
+      run: bash .github/scripts/update_version.sh "${{ steps.save-release-version.outputs.release_version }}"
+
     - name: Publish package
       run: |
         poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
@@ -83,7 +87,7 @@ jobs:
       contents: write
       pull-requests: write
     needs: [ bump-and-publish ]
-    uses: Netcracker/qubership-workflow-hub/.github/workflows/release-drafter.yml@v2.2.2
+    uses: Netcracker/qubership-workflow-hub/.github/workflows/release-drafter.yml@v2.4.0
     with:
       version: ${{ needs.bump-and-publish.outputs.release_version }}
       ref: ${{ github.ref_name }}
@@ -108,7 +112,7 @@ jobs:
       run: pip install poetry && poetry self add poetry-plugin-export && poetry export -f requirements.txt --output requirements.txt --without-hashes
 
     - name: Build and Publish Docker image
-      uses: netcracker/qubership-workflow-hub/actions/docker-action@b2468074afe9e14270e4d3967376cded733da360 #v2.0.5
+      uses: netcracker/qubership-workflow-hub/actions/docker-action@v2.4.0
       with:
         ref: ${{ github.ref_name }}
         checkout: false

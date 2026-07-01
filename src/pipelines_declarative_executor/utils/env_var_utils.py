@@ -7,6 +7,7 @@ from pipelines_declarative_executor.utils.string_utils import StringUtils
 class EnvVar:
 
     # GENERAL
+    PDE_VERSION = "2.1.1"  # kept in sync with pyproject.toml by update_version.sh
     GLOBAL_CONFIGS_PREFIX = os.getenv('PIPELINES_DECLARATIVE_EXECUTOR_GLOBAL_CONFIGS_PREFIX', "CUSTOM_GLOBAL_CONFIG")
     AUTH_RULES_NAME = "PIPELINES_DECLARATIVE_EXECUTOR_AUTH_RULES"
     PYTHON_MODULE_PATH = os.getenv('PIPELINES_DECLARATIVE_EXECUTOR_PYTHON_MODULE_PATH', None)

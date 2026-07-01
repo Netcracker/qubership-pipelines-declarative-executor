@@ -9,6 +9,7 @@ from pipelines_declarative_executor.model.stage import ExecutionStatus
 from pipelines_declarative_executor.model.exceptions import StageExecutionException
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
 from pipelines_declarative_executor.report.report_summary_table import ReportSummaryTable
+from pipelines_declarative_executor.utils.color_utils import ColorUtils
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
 from pipelines_declarative_executor.utils.debug_data_collector import DebugDataCollector
 from pipelines_declarative_executor.utils.logging_utils import LoggingUtils
@@ -85,7 +86,7 @@ class PipelineExecutor:
         execution.code = CommonUtils.calculate_final_code(execution)
         execution.finish_time = datetime.now()
         execution.store_state()
-        log_msg = f"Execution Finished - {execution.status} - {execution.pipeline.logged_name()}"
+        log_msg = f"Execution Finished - {ColorUtils.colorize_status(execution.status)} - {execution.pipeline.logged_name()}"
         execution.logger.info("\n" + StringUtils.format_pipeline_header(log_msg))
         execution.logger.handlers.clear()  # clean up Logger
 

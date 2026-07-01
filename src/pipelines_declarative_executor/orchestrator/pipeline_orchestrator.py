@@ -1,16 +1,15 @@
-import uuid, os, requests, logging
+import uuid, os, logging
 
 from urllib.parse import urlparse
-from requests import Response
 from pipelines_declarative_executor.executor.params_processor import ParamsProcessor
 from pipelines_declarative_executor.model.exceptions import SopsException
 from pipelines_declarative_executor.model.orchestrator import AtlasMetaFile, PipelineTemplate
 from pipelines_declarative_executor.model.pipeline import PipelineExecution, PipelineVars, Pipeline, Stage
 from pipelines_declarative_executor.model.stage import ExecutionStatus, StageType, VALID_STAGE_TYPES
-from pipelines_declarative_executor.utils.auth_utils import AuthConfig
 from pipelines_declarative_executor.utils.common_utils import CommonUtils
 from pipelines_declarative_executor.utils.constants import Constants
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
+from pipelines_declarative_executor.utils.http_utils import HttpUtils
 from pipelines_declarative_executor.utils.sops_utils import SOPS, SopsUtils
 from pipelines_declarative_executor.utils.string_utils import StringUtils
 from pipelines_declarative_executor.x_modules_ops.dict_utils import UtilsDictionary
@@ -227,8 +226,8 @@ class PipelineOrchestrator:
         try:
             url_components = urlparse(file_path)
             if url_components.scheme in ('http', 'https'):
-                response = PipelineOrchestrator._get_response_from_url(file_path, AuthConfig().get_auth_for_url(file_path))
-                data, is_secure = SopsUtils.load_and_decrypt_yaml(response.text)
+                content = HttpUtils.get_url_content(file_path)
+                data, is_secure = SopsUtils.load_and_decrypt_yaml(content)
                 return AtlasMetaFile(data, file_path, is_secure, True)
             else:
                 with open(file_path, 'r') as f:
@@ -237,22 +236,6 @@ class PipelineOrchestrator:
         except Exception as e:
             logging.warning(f"Error loading YAML from {file_path}: {str(e)}")
             raise
-
-    @staticmethod
-    def _get_response_from_url(url: str, auth_info: tuple[dict, str, bool] | None) -> Response:
-        if auth_info:
-            auth_data, auth_type, is_gitlab_url = auth_info
-            logging.debug(f"Using {auth_type} authentication for {url}")
-            if is_gitlab_url:
-                url = StringUtils.parse_gitlab_raw_url_to_file_api(url, auth_data=auth_data)
-            if isinstance(auth_data, dict):
-                response = requests.get(url, headers=auth_data)
-            else:
-                response = requests.get(url, auth=auth_data)
-        else:
-            response = requests.get(url)
-        response.raise_for_status()
-        return response
 
     @staticmethod
     def _process_sops_exception(ex: SopsException):
