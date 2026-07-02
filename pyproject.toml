@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "qubership-pipelines-declarative-executor"
-version = "2.1.1"
+version = "2.1.3"
 description = "Qubership Pipelines Declarative Executor"
 authors = ["Qubership"]
 readme = "README.md"

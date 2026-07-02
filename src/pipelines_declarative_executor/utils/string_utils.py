@@ -97,11 +97,14 @@ class StringUtils:
         return bool(value)
 
     @staticmethod
-    def parse_gitlab_raw_url_to_file_api(raw_url: str, auth_data) -> str:
+    def parse_gitlab_raw_url_to_file_api(raw_url: str, auth_data) -> tuple[str, str | None]:
         """
         Convert GitLab UI URL to raw file API URL.
         Handles /-/raw/, /-/blob/, /-/tree/ URLs and branches with slashes.
         Uses trial-and-error to find the correct branch/file path split.
+        Returns a (resolved_url, body) tuple: the resolved file-API URL, and the body already
+        fetched by the successful probe so the caller can skip re-fetching it. body is None when
+        no probe succeeded (URL left unchanged), in which case the caller must fetch it.
         """
         parsed = urlparse(raw_url)
         path = parsed.path
@@ -112,6 +115,8 @@ class StringUtils:
             r'^(.*?)/-/tree/(.+)$',
         ]
 
+        from pipelines_declarative_executor.utils.http_utils import HttpUtils
+        session = HttpUtils.get_session()
         for pattern in patterns:
             match = re.match(pattern, path)
             if match:
@@ -134,15 +139,15 @@ class StringUtils:
 
                     try:
                         if isinstance(auth_data, dict):
-                            response = requests.get(test_api_url, headers=auth_data)
+                            response = session.get(test_api_url, headers=auth_data)
                         else:
-                            response = requests.get(test_api_url, auth=auth_data)
+                            response = session.get(test_api_url, auth=auth_data)
                         if response.status_code == 200:
-                            return test_api_url
+                            return test_api_url, response.text
                     except requests.RequestException:
                         continue
 
-        return raw_url
+        return raw_url, None
 
     @staticmethod
     def normalize_line_endings(text: str) -> str:

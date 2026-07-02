@@ -28,7 +28,7 @@ class StageProcessor:
     async def process(execution: PipelineExecution, stage: Stage, parent_stage: Stage = None):
 
         if StageProcessor._check_retry_status(execution, stage):
-            execution.logger.info(f"Skipped processing stage {stage.logged_name()} - {stage.status} (RETRY)")
+            execution.logger.info(f"Skipped processing stage {stage.logged_name()} - {ColorUtils.colorize_status(stage.status)} (RETRY)")
             return
 
         is_first_run = stage.is_first_run()
@@ -102,7 +102,7 @@ class StageProcessor:
             return
         stage.finish_time = datetime.now()
         total_time_log = f" (time: {stage.logged_time()})" if stage.type not in COMPLEX_TYPES else ""
-        execution.logger.info(f"Finish processing stage {stage.logged_name()} - {stage.status}{total_time_log}")
+        execution.logger.info(f"Finish processing stage {stage.logged_name()} - {ColorUtils.colorize_status(stage.status)}{total_time_log}")
         execution.store_state()
 
     @staticmethod

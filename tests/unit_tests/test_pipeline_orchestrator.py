@@ -1,9 +1,11 @@
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from pipelines_declarative_executor.model.stage import StageType, ExecutionStatus
 from pipelines_declarative_executor.orchestrator.pipeline_orchestrator import PipelineOrchestrator
+from pipelines_declarative_executor.utils.auth_utils import AuthConfig, AuthType
+from pipelines_declarative_executor.utils.http_utils import HttpUtils
 
 
 class TestPipelineOrchestrator(unittest.TestCase):
@@ -101,6 +103,32 @@ class TestPipelineOrchestrator(unittest.TestCase):
         self.assertEqual(pipeline_execution.vars.all_vars().get("HIDE_IT"), "hidden_value")
         self.assertIn("SECRET_TOKEN", pipeline_execution.vars.secure_vars)
         self.assertNotIn("OVER_PARAM_1", pipeline_execution.vars.secure_vars)
+
+    def test_remote_content_fetched_once_per_url(self):
+        HttpUtils._content_cache.clear()
+        mock_session = MagicMock()
+        mock_session.get.return_value = MagicMock(status_code=200, text="kind: AtlasConfig")
+        url = "https://example.com/configs/shared.yaml"
+        with patch.object(HttpUtils, "get_session", return_value=mock_session), \
+                patch.object(AuthConfig, "get_auth_for_url", return_value=None):
+            first = HttpUtils.get_url_content(url)
+            second = HttpUtils.get_url_content(url)
+        self.assertEqual(first, "kind: AtlasConfig")
+        self.assertEqual(second, "kind: AtlasConfig")
+        # Second call is served from the cache - the URL is fetched exactly once.
+        self.assertEqual(mock_session.get.call_count, 1)
+
+    def test_gitlab_url_resolved_and_fetched_in_single_round_trip(self):
+        HttpUtils._content_cache.clear()
+        mock_session = MagicMock()
+        mock_session.get.return_value = MagicMock(status_code=200, text="kind: AtlasPipeline")
+        gitlab_auth = ({}, AuthType.NO_AUTH, True)
+        with patch.object(HttpUtils, "get_session", return_value=mock_session), \
+                patch.object(AuthConfig, "get_auth_for_url", return_value=gitlab_auth):
+            content = HttpUtils.get_url_content(
+                "https://gitlab.example.com/group/project/-/blob/master/pipeline.yaml")
+        self.assertEqual(content, "kind: AtlasPipeline")
+        self.assertEqual(mock_session.get.call_count, 1)
 
 
 if __name__ == '__main__':

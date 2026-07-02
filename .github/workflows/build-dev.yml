@@ -28,7 +28,7 @@ jobs:
       run: pip install poetry && poetry self add poetry-plugin-export && poetry export -f requirements.txt --output requirements.txt --without-hashes
 
     - name: Build and Publish Docker image
-      uses: netcracker/qubership-workflow-hub/actions/docker-action@b2468074afe9e14270e4d3967376cded733da360 #v2.0.5
+      uses: netcracker/qubership-workflow-hub/actions/docker-action@v2.4.0
       with:
         ref: ${{ github.ref_name }}
         checkout: false

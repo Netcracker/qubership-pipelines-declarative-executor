@@ -1,7 +1,9 @@
 from datetime import datetime
 
-from tabulate import tabulate
+import tabulate
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
+from pipelines_declarative_executor.model.stage import ExecutionStatus, StageType
+from pipelines_declarative_executor.utils.color_utils import ColorUtils
 from pipelines_declarative_executor.utils.env_var_utils import EnvVar
 from pipelines_declarative_executor.utils.string_utils import StringUtils
 
@@ -11,6 +13,11 @@ class ReportSummaryTable:
     TABLE_BORDER_LINE_WIDTH = 120
     TABULATE_TABLE_FORMAT = "github"
     UNKNOWN_VALUE = "N/A"
+
+    BLANK_GUIDE = "    "
+    NESTED_PIPELINE_TRIGGER_MARKER = "▶ "
+    PIPES          = ("│   ", "├─ ", "└─ ")
+    PIPES_PARALLEL = ("║   ", "╠═ ", "╚═ ")
 
     @staticmethod
     def generate_summary_table(generated_report: dict = None, execution: PipelineExecution = None) -> str:
@@ -30,19 +37,20 @@ class ReportSummaryTable:
         )
 
     @staticmethod
-    def _transform_stages_to_rows(stages: list, rows: list, level: int = 0, ancestors_last_flags: list = None) -> None:
-        if ancestors_last_flags is None:
-            ancestors_last_flags = []
+    def _transform_stages_to_rows(stages: list, rows: list, level: int = 0, ancestor_guides: list = None, parent_is_parallel: bool = False) -> None:
+        if ancestor_guides is None:
+            ancestor_guides = []
 
         for i, stage in enumerate(stages):
             is_current_last = (i == len(stages) - 1)
-            child_ancestors_flags = ancestors_last_flags + [is_current_last]
 
             nesting_prefix = ""
             if level > 0:
-                for ancestor_was_last in ancestors_last_flags:
-                    nesting_prefix += "│   " if not ancestor_was_last else "    "
-                nesting_prefix += "└─ " if is_current_last else "├─ "
+                if parent_is_parallel:
+                    connector = ReportSummaryTable.PIPES_PARALLEL[2] if is_current_last else ReportSummaryTable.PIPES_PARALLEL[1]
+                else:
+                    connector = ReportSummaryTable.PIPES[2] if is_current_last else ReportSummaryTable.PIPES[1]
+                nesting_prefix = "".join(ancestor_guides) + connector
 
             rows.append({
                 'prefix': nesting_prefix,
@@ -57,20 +65,27 @@ class ReportSummaryTable:
                 'avgCpu': stage.get('performance', {}).get('avgCpu'),
             })
 
+            if is_current_last:
+                my_guide = ReportSummaryTable.BLANK_GUIDE
+            else:
+                my_guide = ReportSummaryTable.PIPES_PARALLEL[0] if parent_is_parallel else ReportSummaryTable.PIPES[0]
+            child_guides = ancestor_guides + [my_guide]
+
             if parallel_stages := stage.get('parallelStages', []):
-                ReportSummaryTable._transform_stages_to_rows(parallel_stages, rows, level + 1, child_ancestors_flags)
+                ReportSummaryTable._transform_stages_to_rows(parallel_stages, rows, level + 1, child_guides, parent_is_parallel=True)
 
             if nested_stages := stage.get('nestedPipeline', {}).get('stages', []):
-                ReportSummaryTable._transform_stages_to_rows(nested_stages, rows, level + 1, child_ancestors_flags)
+                ReportSummaryTable._transform_stages_to_rows(nested_stages, rows, level + 1, child_guides, parent_is_parallel=False)
 
     @staticmethod
     def _build_table_with_header(report: dict, rows: list) -> str:
         headers = ["Stage ID", "Stage Name", "Status", "Duration", "Type", "Command"]
         table_data = []
         for row in rows:
+            marker = ReportSummaryTable.NESTED_PIPELINE_TRIGGER_MARKER if row['type'] == StageType.ATLAS_PIPELINE_TRIGGER else ""
             table_data.append([
                 row['id'],
-                f"{row['prefix']}{row['name']}",
+                f"{row['prefix']}{marker}{row['name']}",
                 row['status'],
                 row['time'],
                 row['type'],
@@ -82,21 +97,37 @@ class ReportSummaryTable:
             for i, row in enumerate(rows):
                 table_data[i].extend([row['peakMem'], row['avgCpu']])
 
+        tabulate.PRESERVE_WHITESPACE = True # to keep our stage-name indentation/nesting prefixes
+        table_str = tabulate.tabulate(table_data, headers, tablefmt=ReportSummaryTable.TABULATE_TABLE_FORMAT)
+        table_str = ReportSummaryTable._colorize_failed_rows(table_str, rows)
+
         lines = []
         lines.append("=" * ReportSummaryTable.TABLE_BORDER_LINE_WIDTH)
-        lines.append(tabulate(table_data, headers, tablefmt=ReportSummaryTable.TABULATE_TABLE_FORMAT))
+        lines.append(table_str)
         lines.append("=" * ReportSummaryTable.TABLE_BORDER_LINE_WIDTH)
         lines.append(f"PIPELINE SUMMARY: {ReportSummaryTable._get_or_default(report, 'name')}")
         lines.append(f"ID: {ReportSummaryTable._get_or_default(report, 'id')}")
         lines.append(f"Total Duration: {ReportSummaryTable._get_precise_duration_str(report.get('startedAt'), report.get('finishedAt'))}")
         lines.append(f"Total Stages: {len(rows)}")
         lines.append(f"Retry attempts: {report.get('customData', {}).get('retry_attempt', 0)}")
-        lines.append(f"Status: {ReportSummaryTable._get_or_default(report, 'status')}")
+        lines.append(f"Status: {ColorUtils.colorize_status(ReportSummaryTable._get_or_default(report, 'status'))}")
         if EnvVar.ENABLE_PEAK_RESOURCE_USAGE_PROFILING:
             lines.extend(ReportSummaryTable._build_peak_usage_section())
         lines.append("=" * ReportSummaryTable.TABLE_BORDER_LINE_WIDTH)
 
         return "\n".join(lines)
+
+    @staticmethod
+    def _colorize_failed_rows(table_str: str, rows: list) -> str:
+        # we colorize whole rows to keep width-related calculations same between file/console representations;
+        # data row i is line i + 2 (with 'github' tablefmt);
+        table_lines = table_str.split("\n")
+        header_offset = 2
+        for i, row in enumerate(rows):
+            line_idx = header_offset + i
+            if row['status'] == ExecutionStatus.FAILED and line_idx < len(table_lines):
+                table_lines[line_idx] = ColorUtils.with_color(table_lines[line_idx], ColorUtils.FAILURE_COLOR)
+        return "\n".join(table_lines)
 
     @staticmethod
     def _get_or_default(obj: dict, field: str):

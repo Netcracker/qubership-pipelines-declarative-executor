@@ -3,6 +3,7 @@ import asyncio
 from pipelines_declarative_executor.model.pipeline import PipelineExecution
 from pipelines_declarative_executor.model.stage import Stage, ExecutionStatus, COMPLEX_TYPES
 from pipelines_declarative_executor.report.report_collector import ReportCollector
+from pipelines_declarative_executor.utils.color_utils import ColorUtils
 from pipelines_declarative_executor.utils.string_utils import StringUtils
 
 
@@ -60,7 +61,7 @@ class RetryProcessor:
             execution.logger.error(f"Exception during Pipeline retry-configuration parsing: [{type(e)} - {str(e)}] - retry is aborted")
             return
 
-        retry_msg = f"Pipeline Retry #{attempt} in {timeout}s (limit: {limit}) - {execution.pipeline.logged_name()}"
+        retry_msg = f"{ColorUtils.with_color(f'Pipeline Retry #{attempt}', ColorUtils.WARNING_COLOR)} in {timeout}s (limit: {limit}) - {execution.pipeline.logged_name()}"
         execution.logger.warning("\n" + StringUtils.format_pipeline_header(retry_msg))
         await asyncio.sleep(timeout)
 
