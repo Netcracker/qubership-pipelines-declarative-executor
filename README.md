@@ -5,10 +5,15 @@
 
 # Qubership Pipelines Declarative Executor
 
-Open-source python pipelines orchestrator and executor.
+Open-source Python orchestrator and executor for **Atlas Pipelines** - declarative YAML workflows for CI/CD-style automation.
 
-This application is distributed as a library on PyPI, Docker image on GitHub Packages, and as a Reusable Workflow for your existing GitHub workflows.
-You can use this application in any of the provided forms that best suits your needs.
+You describe a pipeline as a sequence of stages (shell commands or packaged Python CLI modules), define how parameters flow between steps,
+and optionally run stages in parallel or trigger nested sub-pipelines.
+The executor loads configs and pipeline definitions (local paths or remote URLs), evaluates conditions and variable substitution,
+runs each stage as a subprocess, and collects outputs - with built-in retries, SOPS encryption for secrets, execution state save/resume,
+and optional report upload to HTTP or S3 endpoints.
+
+It is distributed as a library on PyPI, a Docker image on GitHub Container Registry, and a reusable GitHub workflow. Use whichever packaging fits your environment.
 
 ## Structure
 
@@ -43,7 +48,7 @@ pip install qubership-pipelines-declarative-executor
 
 Or adding it to your dependency list:
 
-```python
+```toml
 qubership-pipelines-declarative-executor = "^2.0.0"
 ```
 
