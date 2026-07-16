@@ -1,0 +1,72 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-bg-deploy-demo
+  name: Blue/Green Change State on ${ENV_NAME}
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    ENV_NAME: cloud-env-01
+
+  stages:
+    - name: Pre-flight Check
+      job: template-debug-stage
+
+    - name: Validate Configuration
+      job: template-spam-stage
+      input:
+        params:
+          params:
+            sleep_time: 5
+
+    - name: Build Container Image
+      job: template-spam-stage
+      input:
+        params:
+          params:
+            sleep_time: 12
+
+    - name: Push Image to Registry
+      job: template-spam-stage
+      input:
+        params:
+          params:
+            sleep_time: 8
+
+    - name: Provision Infrastructure
+      job: template-spam-stage
+      input:
+        params:
+          params:
+            sleep_time: 10
+
+    - name: Deploy Application to ${ENV_NAME}
+      job: template-spam-stage
+      input:
+        params:
+          params:
+            sleep_time: 15
+
+    - name: Run Smoke Tests
+      job: template-spam-stage
+      input:
+        params:
+          params:
+            sleep_time: 8
+
+    - name: Post-Deploy Summary
+      job: template-debug-stage
+
+  jobs:
+    template-debug-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "debug"
+
+    template-spam-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            sleep_period: 1
+            print_all_level_logs: false

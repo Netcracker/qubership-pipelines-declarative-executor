@@ -1,0 +1,511 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: common-library
+  name: COMMON_LIBRARY
+  vars:
+    STAGE_TYPE_NESTED: ATLAS_PIPELINE_TRIGGER
+    SLEEP_TIME: 1
+    PIPELINE_DATA_DIR: pipeline_configs/samples/full_deploy
+
+  stages:
+    - name: ARTIFACTS_FINDER
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/component_medium.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              COMPONENT_NAME = ARTIFACTS_FINDER
+              CASE_1 = pos-find-maven-url-by-app-ver
+              LEAF_1 = kratos-find-maven-url TC2
+              CASE_2 = pos-find-maven-url-by-gav
+              LEAF_2 = kratos-find-maven-url TC1
+              CASE_3 = pos-resolve-app-from-sd
+              LEAF_3 = kratos-resolve-version TC1
+              CASE_4 = pos-resolve-build-type
+              LEAF_4 = kratos-resolve-version TC1
+              CASE_5 = pos-resolve-other-declared-types
+              LEAF_5 = kratos-resolve-version TC2
+              CASE_6 = pos-save-artifact-info-and-update-registry
+              LEAF_6 = kratos-save-artifact-info TC3
+
+    - name: test-group-1
+      parallel:
+      - name: ATP
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_small.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = ATP
+                CASE_1 = pos-atp-calculate-pass-rate-invalid-calculation-strategy
+                LEAF_1 = ATP - atp-calculate-pass-rate with invalid calculation strategy
+                CASE_2 = pos-atp-run-tests-pass-rate-from-build-artifacts
+                LEAF_2 = ATP - atp-run-tests with pass rate from build artifacts
+                CASE_3 = pos-atp-run-tests-pass-rate-from-build-logs
+                LEAF_3 = ATP - atp-run-tests with pass rate from build logs
+
+      - name: BOAT
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_with_parallel.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = BOAT
+                CASE_1 = pos-1-boat-create-sc-standard
+                LEAF_1 = boat-create-sc - standard
+                CASE_P1 = pos-boat-get-latest-application-versions
+                LEAF_P1 = get latest application versions
+                CASE_P2 = pos-1-boat-get-sc
+                LEAF_P2 = boat-get-sc - standard
+                CASE_P3 = pos-1-boat-delete-sc
+                LEAF_P3 = boat-delete-sc - standard
+                CASE_2 = pos-1-boat-update-sc
+                LEAF_2 = boat-update-sc - tags
+                CASE_3 = pos-1-boat-release-sc
+                LEAF_3 = boat-release-sc - standard
+
+      - name: JIRA
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_medium.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = JIRA
+                CASE_1 = pos-jira-add-ticket-comment
+                LEAF_1 = JIRA - jira-add-ticket-comment
+                CASE_2 = pos-jira-add-ticket-comment-with-latest-comments-count
+                LEAF_2 = JIRA - jira-add-ticket-comment with latest_comments_count
+                CASE_3 = pos-jira-create-ticket
+                LEAF_3 = JIRA - jira-create-ticket
+                CASE_4 = pos-jira-create-ticket-with-field-names-filter
+                LEAF_4 = JIRA - jira-create-ticket with field_names_filter
+                CASE_5 = pos-jira-update-ticket
+                LEAF_5 = JIRA - jira-update-ticket
+                CASE_6 = pos-jira-update-ticket-with-status-transition
+                LEAF_6 = JIRA - jira-update-ticket with status transition
+
+      - name: KRATOS
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_medium.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = KRATOS
+                CASE_1 = TC 1, 2
+                LEAF_1 = kratos-get-parameters - UC 1
+                CASE_2 = TC 3, 4
+                LEAF_2 = kratos-get-parameters - UC 3
+                CASE_3 = TC 5, 6
+                LEAF_3 = kratos-get-parameters - UC 5
+                CASE_4 = TC 7, 8
+                LEAF_4 = kratos-get-parameters - UC 7
+                CASE_5 = TC 9, 10
+                LEAF_5 = kratos-get-parameters - UC 9
+                CASE_6 = TC 11, 12
+                LEAF_6 = kratos-get-parameters - UC 11
+
+      - name: ENVCHECKER
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_small.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = ENVCHECKER
+                CASE_1 = pos-1-run-envchecker
+                LEAF_1 = Trigger envchecker jenkins job
+                CASE_2 = pos-2-run-envchecker
+                LEAF_2 = Trigger envchecker jenkins job
+                CASE_3 = pos-3-run-envchecker
+                LEAF_3 = Trigger envchecker jenkins job
+
+      - name: GLHF
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_with_parallel.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = GLHF
+                CASE_1 = pos-1-glhf-export-parameter-sets
+                LEAF_1 = Test command
+                CASE_P1 = pos-1-glhf-get-parameter-set
+                LEAF_P1 = Test command
+                CASE_P2 = pos-1-glhf-get-parameters
+                LEAF_P2 = Test command
+                CASE_P3 = pos-2-glhf-get-parameters
+                LEAF_P3 = Test command
+                CASE_2 = pos-1-glhf-import-parameter-sets
+                LEAF_2 = Test command
+                CASE_3 = pos-2-glhf-import-parameter-sets
+                LEAF_3 = Test command
+
+      - name: NOTIFICATIONS
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_medium.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = NOTIFICATIONS
+                CASE_1 = pos-send-email-plain
+                LEAF_1 = Notifications - Send email
+                CASE_2 = pos-send-email-html
+                LEAF_2 = Notifications - Send email
+                CASE_3 = pos-send-email-attachments
+                LEAF_3 = Notifications - Send email
+                CASE_4 = pos-send-webex-message
+                LEAF_4 = Notifications - Send webex message
+                CASE_5 = pos-send-attachment
+                LEAF_5 = Notifications - Send webex message
+                CASE_6 = pos-send-empty-content
+                LEAF_6 = Notifications - Send webex message
+
+      - name: ENVGENERATOR
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_medium.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = ENVGENERATOR
+                CASE_1 = pos-1-envgene-cred-rotation
+                LEAF_1 = Test command
+                CASE_2 = pos-2-envgene-cred-rotation
+                LEAF_2 = Test command
+                CASE_3 = pos-3-envgene-cred-rotation
+                LEAF_3 = Test command
+                CASE_4 = pos-4-envgene-cred-rotation
+                LEAF_4 = Test command
+                CASE_5 = pos-5-envgene-cred-rotation
+                LEAF_5 = Test command
+                CASE_6 = pos-6-envgene-cred-rotation
+                LEAF_6 = Test command
+
+      - name: INIT_SESSION
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_medium.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = INIT_SESSION
+                CASE_1 = POS_1
+                LEAF_1 = init-execution-session - generate params
+                CASE_2 = POS_2
+                LEAF_2 = init-execution-session - GitLab concurrency check
+                CASE_3 = POS_3
+                LEAF_3 = init-execution-session - invalid UUID regeneration
+                CASE_4 = POS_4
+                LEAF_4 = init-execution-session - Jenkins concurrency check
+                CASE_5 = POS_5
+                LEAF_5 = init-execution-session - reuse session ID
+                CASE_6 = POS_6
+                LEAF_6 = init-execution-session - skip_concurrency_check=true
+
+      - name: JENKINS
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_small.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = JENKINS
+                CASE_1 = pos-jenkins-run-pipeline
+                LEAF_1 = Jenkins - jenkins-run-pipeline
+                CASE_2 = pos-jenkins-run-pipeline-dry-run
+                LEAF_2 = Jenkins - jenkins-run-pipeline in dry-run
+                CASE_3 = pos-jenkins-run-pipeline-with-artifact
+                LEAF_3 = Jenkins - jenkins-run-pipeline with artifact
+
+      - name: CLOUD_RELEASE
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_small.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = CLOUD_RELEASE
+                CASE_1 = pos-cloud-release-find-qualified-application-versions
+                LEAF_1 = find qualified application versions
+                CASE_2 = pos-cloud-release-find-qualified-application-versions
+                LEAF_2 = find qualified application versions
+                CASE_3 = pos-cloud-release-find-qualified-application-versions
+                LEAF_3 = find qualified application versions
+
+    - name: test-group-2
+      parallel:
+      - name: GIT
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_with_parallel.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = GIT
+                CASE_1 = pos-1-git-sd-update-versions
+                LEAF_1 = Test command
+                CASE_P1 = pos-1-git-merge-solution-descriptors
+                LEAF_P1 = Test command
+                CASE_P2 = pos-1-git-sync-files
+                LEAF_P2 = Test command
+                CASE_P3 = pos-1-git-clean-repository-full-wipe
+                LEAF_P3 = git-clean-repository - full wipe
+                CASE_2 = pos-2-git-merge-solution-descriptors
+                LEAF_2 = Test command
+                CASE_3 = pos-3-git-sync-files
+                LEAF_3 = Test command
+
+      - name: GITLAB
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_medium.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = GITLAB
+                CASE_1 = POS_1
+                LEAF_1 = pos-gitlab-run-pipeline
+                CASE_2 = POS_2
+                LEAF_2 = pos-gitlab-run-pipeline_with_use_existing_pipeline
+                CASE_3 = POS_3
+                LEAF_3 = pos-gitlab-run-pipeline_without_params
+                CASE_4 = POS_4
+                LEAF_4 = pos-gitlab-run-pipeline_with_import_artifacts
+                CASE_5 = POS_1
+                LEAF_5 = pos-gitlab-run-pipeline
+                CASE_6 = POS_2
+                LEAF_6 = pos-gitlab-run-pipeline_with_use_existing_pipeline
+
+      - name: SERVICE
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_small.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = SERVICE
+                CASE_1 = pos-1-update-version-by-regex-entire-repo
+                LEAF_1 = update-version-by-regex - entire repo
+                CASE_2 = pos-2-update-version-by-regex-specific-paths
+                LEAF_2 = update-version-by-regex - specific paths
+                CASE_3 = pos-3-update-version-by-regex-dry-run
+                LEAF_3 = update-version-by-regex - dry run
+
+      - name: BUILD
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_medium.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = BUILD
+                CASE_1 = pos-build-artifact-sd
+                LEAF_1 = build-artifact-sd
+                CASE_2 = pos-1-build-gsf-gear-standard
+                LEAF_2 = build-gsf-gear - standard
+                CASE_3 = pos-2-build-gsf-gear-promote-true
+                LEAF_3 = build-gsf-gear - promote=true
+                CASE_4 = pos-3-build-gsf-gear-output-params
+                LEAF_4 = build-gsf-gear - output params
+                CASE_5 = pos-build-artifact-sd
+                LEAF_5 = build-artifact-sd
+                CASE_6 = pos-1-build-gsf-gear-standard
+                LEAF_6 = build-gsf-gear - standard
+
+      - name: PROMOTE
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_large.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = PROMOTE
+                CASE_1 = TC 1, 2
+                LEAF_1 = kratos-promote-artifacts - UC 1
+                CASE_2 = TC 3, 4
+                LEAF_2 = kratos-promote-artifacts - UC 3
+                CASE_3 = TC 5
+                LEAF_3 = kratos-promote-artifacts - UC 5
+                CASE_4 = TC 6, 7
+                LEAF_4 = kratos-promote-artifacts - UC 6
+                CASE_5 = TC 8
+                LEAF_5 = kratos-promote-artifacts - UC 8
+                CASE_6 = TC 9, 10
+                LEAF_6 = kratos-promote-artifacts - UC 9
+                CASE_7 = TC 1, 2
+                LEAF_7 = kratos-promote-artifacts - UC 1
+                CASE_8 = TC 3, 4
+                LEAF_8 = kratos-promote-artifacts - UC 3
+                CASE_9 = TC 5
+                LEAF_9 = kratos-promote-artifacts - UC 5
+                CASE_10 = TC 6, 7
+                LEAF_10 = kratos-promote-artifacts - UC 6
+
+      - name: REPORT
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_large.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = REPORT
+                CASE_1 = pos-basic-report
+                LEAF_1 = stage for report
+                CASE_2 = pos-hard-coded-custom-templates
+                LEAF_2 = stage for report
+                CASE_3 = pos-md-template-report
+                LEAF_3 = stage for report
+                CASE_4 = pos-basic-report
+                LEAF_4 = Build Report
+                CASE_5 = pos-hard-coded-custom-templates
+                LEAF_5 = Build Report
+                CASE_6 = pos-md-template-report
+                LEAF_6 = Build Report
+                CASE_7 = pos-basic-report
+                LEAF_7 = Webex message report
+                CASE_8 = pos-hard-coded-custom-templates
+                LEAF_8 = Webex message report
+                CASE_9 = pos-md-template-report
+                LEAF_9 = Webex message report
+                CASE_10 = pos-md-template-report
+                LEAF_10 = Webex message report
+
+      - name: PUBLISH
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_small.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = PUBLISH
+                CASE_1 = pos-publish-builds-with-generation-and-cleanup
+                LEAF_1 = Publish-Builds - generation of file, cleanup target FTP folder and publish of pre-configured artifacts
+                CASE_2 = pos-publish-builds-clean_target_folder_only
+                LEAF_2 = Publish-Builds - generation of file, cleanup target FTP folder and publish of pre-configured artifacts
+                CASE_3 = pos-publish-builds-with-generation-and-cleanup
+                LEAF_3 = Publish-Builds - generation of file, cleanup target FTP folder and publish of pre-configured artifacts
+
+      - name: S3
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_small.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = S3
+                CASE_1 = POS1
+                LEAF_1 = Get Parameters from S3 - get parameters from s3 storage
+                CASE_2 = POS2
+                LEAF_2 = Get Parameters from S3 - get parameters from s3 storage
+                CASE_3 = POS1
+                LEAF_3 = Get Parameters from S3 - get parameters from s3 storage
+
+      - name: SOPS
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_small.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = SOPS
+                CASE_1 = pos-sops-encrypt
+                LEAF_1 = SOPS - sops-encrypt as part of run-deploy-v2
+                CASE_2 = pos-sops-encrypt
+                LEAF_2 = SOPS - sops-encrypt as part of run-deploy-v2
+                CASE_3 = pos-sops-encrypt
+                LEAF_3 = SOPS - sops-encrypt as part of run-deploy-v2
+
+      - name: SD
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/component_medium.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+                SLEEP_TIME = ${SLEEP_TIME}
+                COMPONENT_NAME = SD
+                CASE_1 = pos-1-sd-get-versions-all-apps
+                LEAF_1 = Run sd-get-versions - Get all apps from Artifactory
+                CASE_2 = pos-2-sd-get-versions-git-url-all-apps
+                LEAF_2 = Run sd-get-versions - Get all apps from SD stored in Git
+                CASE_3 = pos-3-sd-get-versions-git-url-filter-apps
+                LEAF_3 = Run sd-get-versions - Get filtered apps from SD in Git
+                CASE_4 = pos-4-sd-get-versions-git-url-filter-never-strategy
+                LEAF_4 = Run sd-get-versions - Filter with non-existing app (fail_strategy=NEVER)
+                CASE_5 = pos-1-sd-get-versions-all-apps
+                LEAF_5 = Run sd-get-versions - Get all apps from Artifactory
+                CASE_6 = pos-2-sd-get-versions-git-url-all-apps
+                LEAF_6 = Run sd-get-versions - Get all apps from SD stored in Git

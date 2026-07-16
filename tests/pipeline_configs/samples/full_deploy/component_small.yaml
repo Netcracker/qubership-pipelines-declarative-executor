@@ -1,0 +1,55 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: component-sequential-3
+  name: ${COMPONENT_NAME}
+  vars:
+    STAGE_TYPE_NESTED: ATLAS_PIPELINE_TRIGGER
+    COMPONENT_NAME: component
+    CASE_1: Case 1
+    CASE_2: Case 2
+    CASE_3: Case 3
+    LEAF_1: spam 1
+    LEAF_2: spam 2
+    LEAF_3: spam 3
+
+  stages:
+    - name: ${CASE_1}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_1}
+              LEAF_NAME = ${LEAF_1}
+
+    - name: ${CASE_2}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_2}
+              LEAF_NAME = ${LEAF_2}
+
+    - name: ${CASE_3}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_3}
+              LEAF_NAME = ${LEAF_3}

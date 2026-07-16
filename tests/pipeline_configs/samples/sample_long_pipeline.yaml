@@ -1,0 +1,59 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-linear
+  name: Simple Linear Pipeline
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    SLEEP_TIME: 10
+    SLEEP_PERIOD: 2
+
+  stages:
+    - name: Sleep Cmd 1
+      job: template-sleep-stage
+
+    - name: Sleep Cmd 2
+      job: template-sleep-stage
+
+    - name: Sleep Cmd 3
+      job: template-sleep-stage
+
+    - name: Sleep Cmd 4
+      job: template-sleep-stage
+
+    - name: Sleep Cmd 5
+      job: template-sleep-stage
+
+    - name: Sleep Cmd 6
+      job: template-sleep-stage
+
+    - name: Sleep Cmd 7
+      job: template-sleep-stage
+
+    - name: Sleep Cmd 8
+      job: template-sleep-stage
+
+    - name: Sleep Cmd 9
+      job: template-sleep-stage
+
+    - name: Sleep Cmd 10
+      job: template-sleep-stage
+
+  jobs:
+    template-sleep-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            sleep_time: ${SLEEP_TIME}
+            sleep_period: ${SLEEP_PERIOD}
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_0"
+
+  configuration:
+    output:
+      params:
+        RESULT_SPAM: ${RESULT_SPAM}

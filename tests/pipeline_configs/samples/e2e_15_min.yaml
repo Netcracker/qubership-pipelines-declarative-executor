@@ -1,0 +1,86 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: e2e-feature-coverage-15
+  name: E2E Feature-Coverage Pipeline (15m etcd test)
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    STAGE_TYPE_SH: SHELL_COMMAND
+    STAGE_TYPE_NESTED: ATLAS_PIPELINE_TRIGGER
+    PIPELINE_DATA_DIR: ""
+
+  stages:
+    - name: Generate Test Params
+      job: template-spam-stage
+      output:
+        params:
+          GENERATED_PARAM: "params.some_insecure_param_0"
+          GENERATED_SECURE_PARAM: "params.secure_param_0"
+          GENERATED_NESTED: "params.nested_system.its_key"
+        params_secure:
+          GENERATED_SECURE_BY_MAPPING: "params.secure_param_0"
+
+    - name: Bump Release Version
+      job: template-spam-stage
+
+    - name: Calculate Build Number
+      job: template-spam-stage
+
+    - name: Download Metadata File
+      job: template-spam-stage
+
+    - name: Clone Samples Repository
+      job: template-spam-stage
+
+    - name: Announce Build Number
+      job: template-spam-stage
+
+    - name: Metadata Processing
+      stages:
+        - name: Extract Metadata Fields
+          job: template-spam-stage
+
+        - name: Analyze Metadata File
+          job: template-spam-stage
+
+    - name: Shell Post-Processing
+      job: template-spam-stage
+
+    - name: Optional Debug Stage
+      job: template-spam-stage
+
+    - name: Potentially Failing Stage
+      job: template-spam-stage
+
+    - name: Recovery Stage
+      job: template-spam-stage
+
+    - name: Generate Module Report
+      job: template-spam-stage
+
+    - name: Summary
+      job: template-spam-stage
+
+    - name: Always Run Cleanup
+      job: template-spam-stage
+
+  jobs:
+    template-spam-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            param_count: 3
+            sleep_time: 60
+            print_all_level_logs: false
+
+  configuration:
+    output:
+      params:
+        params:
+          GENERATED_PARAM: ${GENERATED_PARAM}
+      params_secure:
+        params:
+          GENERATED_SECURE_PARAM: ${GENERATED_SECURE_PARAM}
