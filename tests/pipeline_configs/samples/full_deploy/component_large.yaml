@@ -1,0 +1,160 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: component-sequential-10
+  name: ${COMPONENT_NAME}
+  vars:
+    STAGE_TYPE_NESTED: ATLAS_PIPELINE_TRIGGER
+    COMPONENT_NAME: component
+    CASE_1: Case 1
+    CASE_2: Case 2
+    CASE_3: Case 3
+    CASE_4: Case 4
+    CASE_5: Case 5
+    CASE_6: Case 6
+    CASE_7: Case 7
+    CASE_8: Case 8
+    CASE_9: Case 9
+    CASE_10: Case 10
+    LEAF_1: spam 1
+    LEAF_2: spam 2
+    LEAF_3: spam 3
+    LEAF_4: spam 4
+    LEAF_5: spam 5
+    LEAF_6: spam 6
+    LEAF_7: spam 7
+    LEAF_8: spam 8
+    LEAF_9: spam 9
+    LEAF_10: spam 10
+
+  stages:
+    - name: ${CASE_1}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_1}
+              LEAF_NAME = ${LEAF_1}
+
+    - name: ${CASE_2}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_2}
+              LEAF_NAME = ${LEAF_2}
+
+    - name: ${CASE_3}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_3}
+              LEAF_NAME = ${LEAF_3}
+
+    - name: ${CASE_4}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_4}
+              LEAF_NAME = ${LEAF_4}
+
+    - name: ${CASE_5}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_5}
+              LEAF_NAME = ${LEAF_5}
+
+    - name: ${CASE_6}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_6}
+              LEAF_NAME = ${LEAF_6}
+
+    - name: ${CASE_7}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_7}
+              LEAF_NAME = ${LEAF_7}
+
+    - name: ${CASE_8}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_8}
+              LEAF_NAME = ${LEAF_8}
+
+    - name: ${CASE_9}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_9}
+              LEAF_NAME = ${LEAF_9}
+
+    - name: ${CASE_10}
+      type: ${STAGE_TYPE_NESTED}
+      input:
+        params:
+          params:
+            PIPELINE_DATA: |
+              ${PIPELINE_DATA_DIR}/pos_spam.yaml
+            PIPELINE_VARS: |
+              PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              SLEEP_TIME = ${SLEEP_TIME}
+              POS_NAME = ${CASE_10}
+              LEAF_NAME = ${LEAF_10}

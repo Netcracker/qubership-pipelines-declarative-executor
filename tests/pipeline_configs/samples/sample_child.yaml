@@ -1,0 +1,36 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-linear
+  name: Sample Linear Pipeline
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+
+  stages:
+    - name: Some Job 1
+      job: template-spam-stage
+
+    - name: Some Job 2
+      job: template-spam-stage
+
+    - name: Some Job 3
+      job: template-spam-stage
+      output:
+        params:
+          SPECIFIC_TESTED_VAR: "params.some_insecure_param_0"
+
+  jobs:
+    template-spam-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            sleep_time: 0
+
+  configuration:
+    output:
+      params:
+        params:
+          SPECIFIC_TESTED_VAR: ${SPECIFIC_TESTED_VAR}
