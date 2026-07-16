@@ -1,0 +1,76 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: pipeline-complex
+  name: Sample Complex Pipeline
+  vars:
+    STAGE_TYPE_PY: PYTHON_MODULE
+    STAGE_TYPE_NESTED: ATLAS_PIPELINE_TRIGGER
+    TEST_TOKEN: qwerty123
+    FAILURE_CHANCE: 0.5
+
+  stages:
+    - name: Spam Before Parallel
+      job: template-spam-stage
+      input:
+        params:
+          params:
+            sleep_time: 0
+
+    - name: parallel parent
+      parallel:
+      - name: Spam Inside Parallel 1
+        job: template-spam-stage
+
+      - name: Spam Inside Parallel 2
+        job: template-spam-stage
+
+      - name: Trigger Another Pipeline Lv.2 (from inside parallel)
+        type: ${STAGE_TYPE_NESTED}
+        input:
+          params:
+            params:
+              PIPELINE_DATA: |
+                ${PIPELINE_DATA_DIR}/sample_child.yaml
+              PIPELINE_VARS: |
+                PIPELINE_DATA_DIR = ${PIPELINE_DATA_DIR}
+              IS_DRY_RUN: false
+        output:
+          params:
+            params: "*"
+          files:
+            EVERYTHING_FROM_NESTED: "*"
+
+    - name: Might Fail After Parallel
+      type: ${STAGE_TYPE_PY}
+      command: "debug"
+      input:
+        params:
+          params:
+            failure_chance: ${FAILURE_CHANCE}
+
+    - name: Echo Nested Var
+      type: SHELL_COMMAND
+      command: |
+        echo "${SPECIFIC_TESTED_VAR}"
+
+  jobs:
+    template-spam-stage:
+      type: ${STAGE_TYPE_PY}
+      command: "spam"
+      input:
+        params:
+          params:
+            sleep_time: 0
+            print_all_level_logs: false
+      output:
+        params:
+          RESULT_SPAM: "params.some_insecure_param_0"
+
+  configuration:
+    output:
+      params:
+        params:
+          RESULT_SPAM: ${RESULT_SPAM}
+          SPECIFIC_TESTED_VAR: ${SPECIFIC_TESTED_VAR}
