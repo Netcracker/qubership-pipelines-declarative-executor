@@ -67,8 +67,8 @@ class Stage:
 
     def logged_name(self) -> str:
         if EnvVar.USE_COMPACT_LOGGED_NAMES:
-            compact_uuid = self.uuid[-8:]
-            return f'"{self.name}" (...{compact_uuid})'
+            compact_uuid = self.uuid[:8]
+            return f'"{self.name}" ({compact_uuid}...)'
         else:
             return f'"{self.name}" (id={self.id}, uuid={self.uuid})'
 
