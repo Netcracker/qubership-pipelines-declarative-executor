@@ -22,7 +22,10 @@ class ColorUtils:
         'VIOLET': '\033[38;5;162m',  # medium_violet_red
         'RESET': '\033[0m',
     }
-    ANSI_PATTERN = re.compile(r'\x1b\[[0-9;]*m')
+    _ANSI_PATTERN = re.compile(r'\x1b\[[0-9;]*[mK]')
+    _CI_GL_SECTION_START = re.compile(r'(?:\x1b\[0K)?section_start:\d+:[^\r\[\n]+(?:\[[^\]]*\])?(?:\r(?:\x1b\[0K)?)?')
+    _CI_GL_SECTION_END = re.compile(r'(?:\x1b\[0K)?section_end:\d+:[^\r\n]*(?:\r(?:\x1b\[0K)?)?')
+    _CI_GL_CLEAR_ONLY = re.compile(r'^(?:\x1b\[0K)+\s*$')
 
     @staticmethod
     def with_color(message: str, color: str) -> str:
@@ -40,7 +43,31 @@ class ColorUtils:
     def strip_ansi(text: str) -> str:
         if '\x1b' not in text:
             return text
-        return ColorUtils.ANSI_PATTERN.sub('', text)
+        return ColorUtils._ANSI_PATTERN.sub('', text)
+
+    @staticmethod
+    def strip_ci_sections(text: str) -> str:
+        if '::group::' not in text and '::endgroup::' not in text and 'section_start:' not in text and 'section_end:' not in text:
+            return text
+
+        out_lines = []
+        for line in text.split('\n'):
+            if line.strip() == '::endgroup::':
+                continue
+            stripped_end = ColorUtils._CI_GL_SECTION_END.sub('', line)
+            if stripped_end != line and stripped_end.strip() == '':
+                continue
+            line = stripped_end
+            stripped_start = ColorUtils._CI_GL_SECTION_START.sub('', line)
+            if stripped_start != line and stripped_start.strip() == '':
+                continue
+            line = stripped_start
+            if ColorUtils._CI_GL_CLEAR_ONLY.match(line):
+                continue
+            if line.startswith('::group::'):
+                line = line[len('::group::'):]
+            out_lines.append(line)
+        return '\n'.join(out_lines)
 
 
 class ColoredFormatter(logging.Formatter):
@@ -63,7 +90,9 @@ class ColoredFormatter(logging.Formatter):
 
 
 class PlainFormatter(logging.Formatter):
-    """Strips ANSI color/style codes from the fully-formatted line."""
+    """Strips ANSI colors and CI collapsible-section markers for clean file/plain logs."""
 
     def format(self, record):
-        return ColorUtils.strip_ansi(super().format(record))
+        formatted = super().format(record)
+        formatted = ColorUtils.strip_ci_sections(formatted)
+        return ColorUtils.strip_ansi(formatted)

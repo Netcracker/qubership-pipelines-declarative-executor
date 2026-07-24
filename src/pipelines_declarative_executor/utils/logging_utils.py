@@ -63,8 +63,8 @@ class LoggingUtils:
             "DEBUG": [
                 "IS_LOCAL_DEBUG", "ENABLE_FULL_EXECUTION_LOG",
                 "ENABLE_MODULE_STDOUT_LOG", "ENABLE_DEBUG_DATA_COLLECTOR",
-                "ENABLE_COLLAPSIBLE_CI_LOGS", "USE_COMPACT_LOGGED_NAMES",
-                "ENABLE_BACKUP_BEFORE_RETRY"
+                "ENABLE_COLLAPSIBLE_CI_LOGS", "ENABLE_COLLAPSIBLE_SUMMARY_TABLE_ROWS",
+                "USE_COMPACT_LOGGED_NAMES", "ENABLE_BACKUP_BEFORE_RETRY"
             ],
             "REMOTE REPORT": [
                 "REPORT_SEND_MODE", "REPORT_SEND_INTERVAL", "REPORT_STATUS_POLL_INTERVAL",
@@ -97,6 +97,26 @@ class LoggingUtils:
             logging.info(env_info)
 
     @staticmethod
+    def ci_section_start(header: str, section_id: str = "section") -> str:
+        """Return a CI collapsible-section start marker (empty string when not in CI)."""
+        if EnvVar.IS_GITLAB:
+            gl_timestamp = int(time.time())
+            return f"\033[0Ksection_start:{gl_timestamp}:{section_id}[collapsed=true]\r\033[0K{header}"
+        if EnvVar.IS_GITHUB:
+            return f"::group::{header}"
+        return ""
+
+    @staticmethod
+    def ci_section_end(section_id: str = "section") -> str:
+        """Return a CI collapsible-section end marker (empty string when not in CI)."""
+        if EnvVar.IS_GITLAB:
+            gl_timestamp = int(time.time())
+            return f"\033[0Ksection_end:{gl_timestamp}:{section_id}\r\033[0K"
+        if EnvVar.IS_GITHUB:
+            return "::endgroup::"
+        return ""
+
+    @staticmethod
     @contextmanager
     def collapsible_section(header: str = "Collapsible section", stage = None, section_id: str = None):
         if not EnvVar.ENABLE_COLLAPSIBLE_CI_LOGS:
@@ -115,3 +135,4 @@ class LoggingUtils:
                 print("::endgroup::")
             if EnvVar.IS_GITLAB:
                 print(f"\033[0Ksection_end:{gl_timestamp}:{section_id}\r\033[0K")
+
