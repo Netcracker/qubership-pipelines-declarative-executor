@@ -10,7 +10,7 @@ packages = [{from = "src", include = "pipelines_declarative_executor"}]
 [tool.poetry.dependencies]
 python = "^3.11"
 PyYAML = "^6.0"
-click = "^8.1"
+click = "^8.3.3"
 requests = "^2.32.3"
 urllib3 = "^2.7.0"
 idna = "^3.15"
