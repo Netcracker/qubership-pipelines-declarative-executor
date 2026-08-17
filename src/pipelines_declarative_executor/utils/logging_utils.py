@@ -16,18 +16,27 @@ class LoggingUtils:
     EXECUTION_LOG_NAME = "execution.log"
     FULL_EXECUTION_LOG_NAME = "full_execution.log"
     DEFAULT_FORMAT = u'[%(asctime)s] [%(levelname)s] [class=%(filename)s:%(lineno)-3s] %(message)s'
+    _delivery_log_handler = None
+
+    @staticmethod
+    def get_delivery_log_handler():
+        return LoggingUtils._delivery_log_handler
 
     @staticmethod
     def configure_root_logger() -> Logger:
+        from pipelines_declarative_executor.delivery.config_loader import DeliveryConfigLoader
+        from pipelines_declarative_executor.delivery.delivery_log_handler import DeliveryLogHandler
+
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.DEBUG)
 
         console_handler = logging.StreamHandler(stream=sys.stdout)
         console_handler.setLevel(LoggingUtils.CONSOLE_LOG_LEVEL)
         if EnvVar.NO_RICH:
-            console_handler.setFormatter(PlainFormatter(LoggingUtils.DEFAULT_FORMAT))
+            formatter = PlainFormatter(LoggingUtils.DEFAULT_FORMAT)
         else:
-            console_handler.setFormatter(ColoredFormatter(LoggingUtils.DEFAULT_FORMAT))
+            formatter = ColoredFormatter(LoggingUtils.DEFAULT_FORMAT)
+        console_handler.setFormatter(formatter)
         root_logger.addHandler(console_handler)
 
         if EnvVar.ENABLE_FULL_EXECUTION_LOG:
@@ -35,6 +44,13 @@ class LoggingUtils:
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(PlainFormatter(LoggingUtils.DEFAULT_FORMAT))
             root_logger.addHandler(file_handler)
+
+        if DeliveryConfigLoader.has_log_delivery():
+            delivery_handler = DeliveryLogHandler()
+            delivery_handler.setLevel(LoggingUtils.CONSOLE_LOG_LEVEL)
+            delivery_handler.setFormatter(formatter)
+            root_logger.addHandler(delivery_handler)
+            LoggingUtils._delivery_log_handler = delivery_handler
 
         return root_logger
 
@@ -65,10 +81,6 @@ class LoggingUtils:
                 "ENABLE_MODULE_STDOUT_LOG", "ENABLE_DEBUG_DATA_COLLECTOR",
                 "ENABLE_COLLAPSIBLE_CI_LOGS", "ENABLE_COLLAPSIBLE_SUMMARY_TABLE_ROWS",
                 "USE_COMPACT_LOGGED_NAMES", "ENABLE_BACKUP_BEFORE_RETRY"
-            ],
-            "REMOTE REPORT": [
-                "REPORT_SEND_MODE", "REPORT_SEND_INTERVAL", "REPORT_STATUS_POLL_INTERVAL",
-                "REPORT_UPLOAD_USE_COMPRESSION_DEFAULT"
             ],
             "ENCRYPTION": [
                 "ENCRYPT_OUTPUT_PARAMS", "FAIL_ON_MISSING_SOPS", "STRICT_MODE"

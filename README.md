@@ -80,10 +80,9 @@ Separate article on syntax with examples [is available here](docs/atlas_pipeline
 
 Executor collects and can upload [report](docs/report_structure.md) (intended for UI representation) of currently executed pipeline.
 
-This feature is configured via env variables in [Report section](docs/env_vars.md#remote-report-params).
-You can select `REPORT_SEND_MODE` (either `ON_COMPLETION` or `PERIODIC`), send intervals, and endpoint configs:
+Remote uploads are configured via [Remote Delivery params](docs/env_vars.md#remote-delivery-params) using `PIPELINES_DECLARATIVE_EXECUTOR_REMOTE_DELIVERIES`.
 
-Report configuration [example is here](docs/config_examples.md#report_remote_endpoints)
+Delivery configuration [example is here](docs/config_examples.md#remote_deliveries)
 
 ### Auth Rules
 
