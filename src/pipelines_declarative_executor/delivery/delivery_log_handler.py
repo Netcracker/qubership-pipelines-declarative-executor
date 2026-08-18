@@ -3,14 +3,16 @@ import logging
 
 
 class DeliveryLogHandler(logging.Handler):
+    terminator = "\n"
+
     def __init__(self):
         super().__init__()
         self._buffer = io.BytesIO()
 
     def emit(self, record):
         try:
-            self._buffer.write(self.format(record).encode("utf-8", errors="replace"))
-            self._buffer.write(self.terminator.encode("utf-8"))
+            message = self.format(record) + self.terminator
+            self._buffer.write(message.encode("utf-8", errors="replace"))
         except Exception:
             self.handleError(record)
 
