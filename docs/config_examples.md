@@ -1,51 +1,88 @@
 ## Example configurations
 
-### REPORT_REMOTE_ENDPOINTS
+### REMOTE_DELIVERIES
 
-This configuration will be read either from file, located in file path, specified in `PIPELINES_DECLARATIVE_EXECUTOR_REPORT_REMOTE_ENDPOINTS_FILE_PATH` env var,
-or as a string value from `PIPELINES_DECLARATIVE_EXECUTOR_REPORT_REMOTE_ENDPOINTS` env var.
+This configuration will be read either from file, located in file path, specified in `PIPELINES_DECLARATIVE_EXECUTOR_REMOTE_DELIVERIES_FILE_PATH` env var,
+or as a string value from `PIPELINES_DECLARATIVE_EXECUTOR_REMOTE_DELIVERIES` env var.
 
-You can currently specify both `headers` and `auth` sections.
-Auth (for basic auth) will require both `username` and `password`, they can be provided via `username_value` directly in config, or as name of env var - `username_env_var`.
-Token for substitution in `headers` can also be provided via these approaches.
+Each delivery describes one payload type (`status`, `report`, or `log`), how often to send it, and where.
 
-Both endpoint types (s3/http) support `use_compression` param (it defaults to `PIPELINES_DECLARATIVE_EXECUTOR_REPORT_UPLOAD_USE_COMPRESSION_DEFAULT` value when not specified).
-If it's `true`, request body will be GZIP compressed, and `Content-Encoding` = `gzip` will be added to request headers.
+| Delivery field     | Required                         | Description                                              |
+|--------------------|----------------------------------|----------------------------------------------------------|
+| `payload`          | yes                              | `status`, `report`, or `log`                             |
+| `mode`             | yes                              | `periodic` or `on_completion` (case-insensitive)         |
+| `interval_seconds` | when `mode` is `periodic`        | Minimum seconds between sends                            |
+| `endpoints`        | yes                              | Non-empty list of HTTP or S3 targets                     |
+
+`use_compression` is **required** on every endpoint.
+If `use_compression` is `true`, the request body is GZIP compressed and `Content-Encoding: gzip` is added to HTTP headers.
+
+Auth (for basic auth) requires both `username` and `password`, provided via `username_value` / `password_value` or `username_env_var` / `password_env_var`.
+Token for substitution in `headers` can be provided via `token_value` or `token_env_var`.
 
 ```json
 [
   {
-    "type": "http",
-    "endpoint": "https://api.example.com",
-    "auth": {"username_value": "user", "password_value": "pass"},
-    "headers": {"Content-Type": "application/json"}
+    "payload": "status | report",
+    "mode": "periodic",
+    "interval_seconds": 10,
+    "endpoints": [
+      {
+        "type": "http",
+        "endpoint": "http://operator/api/v1/runs/<run-id>/deliveries/status",
+        "headers": {
+          "Authorization": "Bearer {token}",
+          "Content-Type": "application/json"
+        },
+        "token_env_var": "PDE_OPERATOR_TOKEN",
+        "use_compression": false
+      }
+    ]
   },
   {
-    "type": "http",
-    "endpoint": "http://localhost:8000/send_report",
-    "headers": {
-      "Authorization": "Bearer {token}"
-    },
-    "token_value": "my_cool_token"
+    "payload": "log",
+    "mode": "periodic",
+    "interval_seconds": 10,
+    "endpoints": [
+      {
+        "type": "http",
+        "endpoint": "http://operator/api/v1/runs/<run-id>/deliveries/log",
+        "headers": {
+          "Authorization": "Bearer {token}",
+          "Content-Type": "text/plain"
+        },
+        "token_env_var": "PDE_OPERATOR_TOKEN",
+        "use_compression": true
+      }
+    ]
   },
   {
-    "type": "http",
-    "endpoint": "http://localhost:8000/send_report",
-    "auth": {"username_value": "user", "password_env_var": "MY_PASSWORD_ENV_VAR"},
-    "headers": {
-      "x-SPECIAL-HEADER": "token {token}"
-    },
-    "token_env_var": "MY_SPECIAL_TOKEN_ENV_VAR",
-    "use_compression": true
+    "payload": "report",
+    "mode": "on_completion",
+    "endpoints": [
+      {
+        "type": "http",
+        "endpoint": "https://api.example.com/report",
+        "auth": {"username_value": "user", "password_value": "pass"},
+        "headers": {"Content-Type": "application/json"},
+        "use_compression": false
+      }
+    ]
   },
   {
-    "type": "s3",
-    "host": "s3.example-minio.com",
-    "access_key": "your_access_key",
-    "secret_key": "your_secret_key",
-    "bucket_name": "your_bucket",
-    "object_name": "your_object",
-    "use_compression": false
+    "payload": "report",
+    "mode": "on_completion",
+    "endpoints": [
+      {
+        "type": "s3",
+        "host": "s3.example-minio.com",
+        "access_key": "your_access_key",
+        "secret_key": "your_secret_key",
+        "bucket_name": "your_bucket",
+        "object_name": "your_object",
+        "use_compression": false
+      }
+    ]
   }
 ]
 ```

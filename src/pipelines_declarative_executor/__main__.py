@@ -108,7 +108,7 @@ def install_cancellation_handlers():
 async def create_and_run_pipeline(pipeline_data: str, pipeline_vars: str, pipeline_vars_secure: str, pipeline_dir: str, is_dry_run: bool):
     from pipelines_declarative_executor.orchestrator.pipeline_orchestrator import PipelineOrchestrator
     from pipelines_declarative_executor.executor.pipeline_executor import PipelineExecutor
-    from pipelines_declarative_executor.report.report_uploader import ReportUploader
+    from pipelines_declarative_executor.delivery.delivery_manager import DeliveryManager
     from pipelines_declarative_executor.model.stage import ExecutionStatus
     install_cancellation_handlers()
     try:
@@ -120,7 +120,7 @@ async def create_and_run_pipeline(pipeline_data: str, pipeline_vars: str, pipeli
     except Exception as e:
         logging.error(f"Exception during orchestration: {e}")
         sys.exit(1)
-    async with ReportUploader(execution=pipeline_execution, configs=ReportUploader.load_endpoint_configs()):
+    async with DeliveryManager(execution=pipeline_execution):
         await PipelineExecutor.start(
             execution=pipeline_execution,
             execution_folder_path=pipeline_dir,
@@ -134,7 +134,7 @@ async def create_and_run_pipeline(pipeline_data: str, pipeline_vars: str, pipeli
 async def retry_pipeline(pipeline_dir: str, retry_vars: str):
     from pipelines_declarative_executor.orchestrator.retry_orchestrator import PipelineRetryOrchestrator
     from pipelines_declarative_executor.executor.pipeline_executor import PipelineExecutor
-    from pipelines_declarative_executor.report.report_uploader import ReportUploader
+    from pipelines_declarative_executor.delivery.delivery_manager import DeliveryManager
     from pipelines_declarative_executor.model.stage import ExecutionStatus
     install_cancellation_handlers()
     try:
@@ -145,7 +145,7 @@ async def retry_pipeline(pipeline_dir: str, retry_vars: str):
     except Exception as e:
         logging.error(f"Exception during orchestration: {e}")
         sys.exit(1)
-    async with ReportUploader(execution=pipeline_execution, configs=ReportUploader.load_endpoint_configs()):
+    async with DeliveryManager(execution=pipeline_execution):
         await PipelineExecutor.start(
             execution=pipeline_execution,
             execution_folder_path=pipeline_dir,

@@ -10,6 +10,7 @@ This report follows a certain structure:
   "apiVersion": "v2",
   "...general pipeline execution data...": "...",
   "performance": {"...": "..."},
+  "progress": {"stagesTotal": 0, "stagesCompleted": 0},
   "config": ["..."],
   "stages": ["..."]
 }

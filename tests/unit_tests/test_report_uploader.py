@@ -1,4 +1,11 @@
-import asyncio, json, gzip, os, signal, subprocess, threading, time
+import asyncio
+import json
+import gzip
+import os
+import signal
+import subprocess
+import threading
+import time
 from base64 import b64decode
 from aiohttp import web
 
@@ -10,9 +17,11 @@ TEST_PASS = "test_pass"
 TEST_TOKEN = "test_token"
 
 
-class _ReportTestServer:
+class _DeliveryTestServer:
     def __init__(self):
         self.received_reports = []
+        self.received_statuses = []
+        self.received_logs = []
         self.port = None
         self._thread = None
         self._started = threading.Event()
@@ -21,6 +30,8 @@ class _ReportTestServer:
 
     def start(self):
         self.received_reports.clear()
+        self.received_statuses.clear()
+        self.received_logs.clear()
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
         if not self._started.wait(timeout=10):
@@ -34,7 +45,9 @@ class _ReportTestServer:
 
     async def _serve(self):
         app = web.Application()
-        app.router.add_post("/report", self._handle_post)
+        app.router.add_post("/report", self._handle_report)
+        app.router.add_post("/status", self._handle_status)
+        app.router.add_post("/log", self._handle_log)
         self._runner = web.AppRunner(app, auto_decompress=False)
         await self._runner.setup()
         site = web.TCPSite(self._runner, "localhost", 0)
@@ -42,7 +55,7 @@ class _ReportTestServer:
         self.port = site._server.sockets[0].getsockname()[1]
         self._started.set()
 
-    async def _handle_post(self, request):
+    async def _authorize(self, request):
         auth_header = request.headers.get("Authorization", "")
 
         if auth_header.startswith("Basic "):
@@ -54,21 +67,41 @@ class _ReportTestServer:
                     return web.Response(text="Invalid credentials", status=403)
             except Exception:
                 return web.Response(text="Invalid auth header", status=400)
-
         elif auth_header.startswith("Bearer "):
             token = auth_header.split(" ", 1)[1]
             if token != TEST_TOKEN:
                 return web.Response(text="Invalid credentials", status=403)
-
         else:
             return web.Response(text="Authentication required", status=401)
+        return None
 
+    async def _read_body(self, request):
         body = await request.read()
         if request.headers.get("Content-Encoding", "") == "gzip":
             body = gzip.decompress(body)
+        return body
 
+    async def _handle_report(self, request):
+        if auth_error := await self._authorize(request):
+            return auth_error
+        body = await self._read_body(request)
         report = json.loads(body.decode("utf-8"))
         self.received_reports.append(report)
+        return web.Response(text="OK", status=200)
+
+    async def _handle_status(self, request):
+        if auth_error := await self._authorize(request):
+            return auth_error
+        body = await self._read_body(request)
+        status_payload = json.loads(body.decode("utf-8"))
+        self.received_statuses.append(status_payload)
+        return web.Response(text="OK", status=200)
+
+    async def _handle_log(self, request):
+        if auth_error := await self._authorize(request):
+            return auth_error
+        body = await self._read_body(request)
+        self.received_logs.append(body.decode("utf-8"))
         return web.Response(text="OK", status=200)
 
     def stop(self):
@@ -88,24 +121,43 @@ class _ReportTestServer:
         self._loop.stop()
 
 
-class TestReportUploader(ExecutorTestCase):
+def _report_delivery(endpoint: str, mode: str, interval_seconds: int | None = None, use_token: bool = False) -> dict:
+    endpoint_config = {
+        "type": "http",
+        "endpoint": endpoint,
+        "headers": {"Content-Type": "application/json"},
+        "use_compression": False,
+    }
+    if use_token:
+        endpoint_config["token_value"] = TEST_TOKEN
+        endpoint_config["headers"]["Authorization"] = "Bearer {token}"
+    else:
+        endpoint_config["auth"] = {
+            "username_value": TEST_USER,
+            "password_value": TEST_PASS,
+        }
+
+    delivery = {
+        "payload": "report",
+        "mode": mode,
+        "endpoints": [endpoint_config],
+    }
+    if interval_seconds is not None:
+        delivery["interval_seconds"] = interval_seconds
+    return delivery
+
+
+class TestRemoteDeliveries(ExecutorTestCase):
 
     @with_exec_dir
-    def test_report_upload_on_completion(self):
-        server = _ReportTestServer()
+    def test_report_delivery_on_completion(self):
+        server = _DeliveryTestServer()
         server.start()
         try:
             endpoint = f"http://localhost:{server.port}/report"
             env = os.environ.copy()
-            env["PIPELINES_DECLARATIVE_EXECUTOR_REPORT_REMOTE_ENDPOINTS"] = json.dumps([
-                {
-                    "type": "http",
-                    "endpoint": endpoint,
-                    "auth": {
-                        "username_value": TEST_USER,
-                        "password_value": TEST_PASS,
-                    },
-                },
+            env["PIPELINES_DECLARATIVE_EXECUTOR_REMOTE_DELIVERIES"] = json.dumps([
+                _report_delivery(endpoint, mode="on_completion"),
             ])
 
             pipeline_data = "pipeline_configs/report/pipeline_report_upload_test.yaml"
@@ -142,24 +194,15 @@ class TestReportUploader(ExecutorTestCase):
             server.stop()
 
     @with_exec_dir
-    def test_report_upload_periodic(self):
-        server = _ReportTestServer()
+    def test_report_delivery_periodic(self):
+        server = _DeliveryTestServer()
         server.start()
         try:
             endpoint = f"http://localhost:{server.port}/report"
             env = os.environ.copy()
-            env["PIPELINES_DECLARATIVE_EXECUTOR_REPORT_REMOTE_ENDPOINTS"] = json.dumps([
-                {
-                    "type": "http",
-                    "endpoint": endpoint,
-                    "token_value": TEST_TOKEN,
-                    "headers": {
-                        "Authorization": "Bearer {token}",
-                    },
-                },
+            env["PIPELINES_DECLARATIVE_EXECUTOR_REMOTE_DELIVERIES"] = json.dumps([
+                _report_delivery(endpoint, mode="periodic", interval_seconds=1, use_token=True),
             ])
-            env["PIPELINES_DECLARATIVE_EXECUTOR_REPORT_SEND_MODE"] = "PERIODIC"
-            env["PIPELINES_DECLARATIVE_EXECUTOR_REPORT_SEND_INTERVAL"] = "1"
 
             pipeline_data = "pipeline_configs/report/pipeline_report_upload_test.yaml"
             pipeline_vars = "SLEEP_TIME=3"
@@ -173,6 +216,10 @@ class TestReportUploader(ExecutorTestCase):
             time.sleep(0.5)
 
             self.assertGreaterEqual(len(server.received_reports), 2)
+            self.assertTrue(
+                any(report.get("status") == "IN_PROGRESS" for report in server.received_reports[:-1]),
+                "expected at least one in-progress periodic report before the final flush",
+            )
 
             last_report = server.received_reports[-1]
             self.assertEqual(last_report["status"], "SUCCESS")
@@ -183,21 +230,14 @@ class TestReportUploader(ExecutorTestCase):
             server.stop()
 
     @with_exec_dir
-    def test_report_upload_on_cancellation(self):
-        server = _ReportTestServer()
+    def test_report_delivery_on_cancellation(self):
+        server = _DeliveryTestServer()
         server.start()
         try:
             endpoint = f"http://localhost:{server.port}/report"
             env = os.environ.copy()
-            env["PIPELINES_DECLARATIVE_EXECUTOR_REPORT_REMOTE_ENDPOINTS"] = json.dumps([
-                {
-                    "type": "http",
-                    "endpoint": endpoint,
-                    "auth": {
-                        "username_value": TEST_USER,
-                        "password_value": TEST_PASS,
-                    },
-                },
+            env["PIPELINES_DECLARATIVE_EXECUTOR_REMOTE_DELIVERIES"] = json.dumps([
+                _report_delivery(endpoint, mode="on_completion"),
             ])
 
             pipeline_data = "pipeline_configs/report/pipeline_report_upload_test.yaml"
@@ -222,5 +262,47 @@ class TestReportUploader(ExecutorTestCase):
             self.assertEqual(len(stages), 2)
             self.assertEqual(stages[0]["status"], "CANCELLED")
             self.assertEqual(stages[1]["status"], "NOT_STARTED")
+        finally:
+            server.stop()
+
+    @with_exec_dir
+    def test_status_delivery_periodic(self):
+        server = _DeliveryTestServer()
+        server.start()
+        try:
+            endpoint = f"http://localhost:{server.port}/status"
+            env = os.environ.copy()
+            env["PIPELINES_DECLARATIVE_EXECUTOR_REMOTE_DELIVERIES"] = json.dumps([{
+                "payload": "status",
+                "mode": "periodic",
+                "interval_seconds": 1,
+                "endpoints": [{
+                    "type": "http",
+                    "endpoint": endpoint,
+                    "token_value": TEST_TOKEN,
+                    "headers": {
+                        "Authorization": "Bearer {token}",
+                        "Content-Type": "application/json",
+                    },
+                    "use_compression": False,
+                }],
+            }])
+
+            pipeline_data = "pipeline_configs/report/pipeline_report_upload_test.yaml"
+            pipeline_vars = "SLEEP_TIME=3"
+            output = self._run_and_log(
+                [*self.PDE_CLI, "run", f"--pipeline_data={pipeline_data}",
+                 f"--pipeline_vars={pipeline_vars}", f"--pipeline_dir={self.exec_dir}"],
+                env=env,
+            )
+            self.assertEqual(output.returncode, 0)
+            time.sleep(0.5)
+
+            self.assertGreaterEqual(len(server.received_statuses), 1)
+            status_payload = server.received_statuses[-1]
+            self.assertEqual(status_payload["status"], "SUCCESS")
+            self.assertIn("progress", status_payload)
+            self.assertNotIn("config", status_payload)
+            self.assertNotIn("stages", status_payload)
         finally:
             server.stop()

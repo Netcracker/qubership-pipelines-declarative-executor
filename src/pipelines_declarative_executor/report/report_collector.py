@@ -18,20 +18,20 @@ class ReportCollector:
     __FINISHED_STAGES: dict[str, dict] = {}
     __FINAL_STATUSES = [ExecutionStatus.SKIPPED, ExecutionStatus.SUCCESS,
                         ExecutionStatus.FAILED, ExecutionStatus.CANCELLED]
+    __FINAL_STATUS_VALUES = {status.value for status in __FINAL_STATUSES}
 
     @staticmethod
     def prepare_ui_view(execution: PipelineExecution) -> dict:
-        ui_view = {
+        stages = [ReportCollector._prepare_stage_data(stage) for stage in execution.pipeline.stages]
+        return {
             "kind": "AtlasPipelineReport",
             "apiVersion": "v2",
             **ReportCollector._prepare_execution(execution),
             **ReportCollector._prepare_performance(),
+            **ReportCollector._prepare_progress(stages),
             "config": ReportCollector._prepare_config(execution),
-            "stages": [],
+            "stages": stages,
         }
-        for stage in execution.pipeline.stages:
-            ui_view["stages"].append(ReportCollector._prepare_stage_data(stage))
-        return ui_view
 
     @staticmethod
     def reset_stages_cache(execution: PipelineExecution):
@@ -63,6 +63,36 @@ class ReportCollector:
             },
         }
         return data
+
+    @staticmethod
+    def _prepare_progress(stages: list) -> dict:
+        stages_total, stages_completed = ReportCollector._count_progress(stages)
+        return {"progress": {"stagesTotal": stages_total, "stagesCompleted": stages_completed}}
+
+    @staticmethod
+    def _count_progress(stages: list) -> tuple[int, int]:
+        total, completed = 0, 0
+        for stage_data in stages:
+            total += 1
+            if ReportCollector._is_final_status(stage_data.get("status")):
+                completed += 1
+            if parallel_stages := stage_data.get(ReportCollector.PARALLEL_STAGES):
+                nested_total, nested_completed = ReportCollector._count_progress(parallel_stages)
+                total += nested_total
+                completed += nested_completed
+            if nested_pipeline := stage_data.get(ReportCollector.NESTED_PIPELINE):
+                nested_total, nested_completed = ReportCollector._count_progress(nested_pipeline.get("stages", []))
+                total += nested_total
+                completed += nested_completed
+        return total, completed
+
+    @staticmethod
+    def _is_final_status(status) -> bool:
+        if status is None:
+            return False
+        if isinstance(status, ExecutionStatus):
+            return status in ReportCollector.__FINAL_STATUSES
+        return status in ReportCollector.__FINAL_STATUS_VALUES
 
     @staticmethod
     def _prepare_config(execution: PipelineExecution) -> list:

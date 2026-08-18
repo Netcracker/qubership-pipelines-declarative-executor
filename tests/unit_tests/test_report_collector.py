@@ -24,6 +24,7 @@ class TestReportCollector(unittest.TestCase):
             self.assertEqual(expected_report["config"], achieved_report["config"])
             self.assertEqual(expected_report["kind"], achieved_report["kind"])
             self.assertEqual(expected_report["apiVersion"], achieved_report["apiVersion"])
+            self.assertEqual({"stagesTotal": 1, "stagesCompleted": 1}, achieved_report["progress"])
 
 
 if __name__ == '__main__':
