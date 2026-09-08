@@ -29,6 +29,7 @@ class PipelineOrchestrator:
 
         if pipeline_data:
             for file_path in StringUtils.trim_lines(pipeline_data):
+                logging.debug(f"Processing file {file_path}")
                 try:
                     meta_file = PipelineOrchestrator._load_yaml_content(file_path=file_path)
                     kind = meta_file.data.get('kind')
@@ -94,6 +95,7 @@ class PipelineOrchestrator:
         global_configs_prefix = EnvVar.GLOBAL_CONFIGS_PREFIX
         for env_key, env_value in os.environ.items():
             if env_key.startswith(global_configs_prefix):
+                logging.debug(f"Processing global config from {env_key} env var")
                 try:
                     data, is_secure = SopsUtils.load_and_decrypt_yaml(env_value)
                     kind = data.get('kind')

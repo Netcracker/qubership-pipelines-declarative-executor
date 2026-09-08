@@ -3,6 +3,7 @@ import threading, logging, requests
 
 class HttpUtils:
     """Shared, lazily-created requests.Session plus a cache of fetched remote bodies keyed by URL."""
+    DEFAULT_TIMEOUT = 60
 
     _session: requests.Session | None = None
     _lock = threading.Lock()
@@ -42,10 +43,10 @@ class HttpUtils:
                 if body is not None:
                     return body
             if isinstance(auth_data, dict):
-                response = session.get(url, headers=auth_data)
+                response = session.get(url, headers=auth_data, timeout=cls.DEFAULT_TIMEOUT)
             else:
-                response = session.get(url, auth=auth_data)
+                response = session.get(url, auth=auth_data, timeout=cls.DEFAULT_TIMEOUT)
         else:
-            response = session.get(url)
+            response = session.get(url, timeout=cls.DEFAULT_TIMEOUT)
         response.raise_for_status()
         return response.text

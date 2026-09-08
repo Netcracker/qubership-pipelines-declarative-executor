@@ -103,6 +103,8 @@ class CommonUtils:
                 return StatusCodes.PIPELINE_FINISHED_SUCCESS
             case ExecutionStatus.FAILED:
                 return StatusCodes.PIPELINE_FINISHED_FAILURE
+            case ExecutionStatus.CANCELLED:
+                return StatusCodes.PIPELINE_FINISHED_CANCEL
             case _:
                 return StatusCodes.PIPELINE_FINISHED_UNKNOWN
 
