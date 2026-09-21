@@ -5,7 +5,7 @@ WORKDIR /app
 ARG SOPS_VERSION
 COPY .sops-version /tmp/.sops-version
 
-RUN apk add --no-cache p7zip curl procps git
+RUN apk upgrade --no-cache && apk add --no-cache p7zip curl procps git
 
 # Install SOPS
 RUN SOPS_VERSION=${SOPS_VERSION:-$(cat /tmp/.sops-version)} && \
