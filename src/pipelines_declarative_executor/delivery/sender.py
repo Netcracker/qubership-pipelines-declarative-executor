@@ -44,6 +44,8 @@ class DeliverySender:
         DeliveryPayload.REPORT: "application/json",
         DeliveryPayload.LOG: "text/plain",
     }
+    HTTP_MAX_ATTEMPTS = 2
+    HTTP_RETRY_DELAY_SECONDS = 0.5
 
     def __init__(self, deliveries: list[DeliveryConfig] | None = None):
         self._targets: dict[int, _DeliveryTargets] = {}
@@ -123,14 +125,22 @@ class DeliverySender:
 
     @staticmethod
     async def _upload_via_http(http_target: _HttpTarget, body: bytes):
-        try:
-            logging.debug(f"Uploading {http_target.payload} delivery via HTTP to {http_target.endpoint}")
-            request_body = DeliverySender._encode_body(body, http_target.use_compression)
-            async with http_target.session.post(http_target.endpoint, data=request_body) as response:
-                response.raise_for_status()
-                logging.debug(f"Upload via HTTP to {http_target.endpoint} finished")
-        except Exception as e:
-            logging.warning(f"Exception during HTTP delivery to {http_target.endpoint}: [{type(e)} - {str(e)}]")
+        request_body = DeliverySender._encode_body(body, http_target.use_compression)
+        for attempt in range(DeliverySender.HTTP_MAX_ATTEMPTS):
+            try:
+                async with http_target.session.post(http_target.endpoint, data=request_body) as response:
+                    response.raise_for_status()
+                    logging.debug(f"Upload {http_target.payload} via HTTP to {http_target.endpoint} finished")
+                return
+            except aiohttp.ClientConnectionError as e:
+                if attempt == DeliverySender.HTTP_MAX_ATTEMPTS - 1:
+                    logging.warning(f"Exception during HTTP delivery to {http_target.endpoint}: [{type(e)} - {str(e)}]")
+                else:
+                    logging.debug(f"Retrying HTTP delivery to {http_target.endpoint} after connection error: [{type(e)} - {str(e)}]")
+                    await asyncio.sleep(DeliverySender.HTTP_RETRY_DELAY_SECONDS)
+            except Exception as e:
+                logging.warning(f"Exception during HTTP delivery to {http_target.endpoint}: [{type(e)} - {str(e)}]")
+                return
 
     @staticmethod
     async def _upload_via_s3(s3_target: _S3Target, body: bytes):
