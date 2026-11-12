@@ -1,0 +1,77 @@
+kind: AtlasPipeline
+apiVersion: v2
+
+pipeline:
+  id: envgene-e2e
+  name: EnvGene E2E
+  vars:
+    INSTANCE_REPO_URL: "https://github.com/LightlessOne/envgene-instance-repo.git"
+    INSTANCE_REPO_HOST: "github.com"
+    INSTANCE_REPO_PATH: "LightlessOne/envgene-instance-repo"
+    INSTANCE_REPO_BRANCH: "master"
+    ENV_NAMES: "test-cluster/e01"
+    GIT_USER: "LightlessOne"
+    GIT_USER_NAME: "LightlessOne"
+    GIT_USER_EMAIL: "envgene@localhost"
+    GIT_TOKEN: ""
+    SOPS_AGE_RECIPIENTS: ""
+    SOPS_AGE_KEY: ""
+    ENV_BUILDER: "true"
+    GENERATE_EFFECTIVE_SET: "true"
+    PIPELINE_TYPE: "GITLAB_DEPLOY"
+    OPERATION_TYPE: "DEPLOY"
+    APPLICATION_VERSIONS: "e01-core:light-shop-app-01:1.1.0,e01-core:light-shop-app-02:1.1.0,e01-core:light-shop-app-03:1.1.0,e01-core:light-shop-app-04:1.1.0,e01-core:light-shop-app-05:1.1.0"
+
+  stages:
+    - name: Clone instance repository
+      type: PYTHON_MODULE
+      command: git-clone
+      input:
+        params:
+          params:
+            url: ${INSTANCE_REPO_URL}
+            branch: ${INSTANCE_REPO_BRANCH}
+            target_dir: repo
+        params_secure:
+          systems:
+            git:
+              username: ${GIT_USER}
+              password: ${GIT_TOKEN}
+      output:
+        files:
+          INSTANCE_REPO: "repo"
+
+    - name: Run EnvGene
+      type: PYTHON_MODULE
+      command: envgene-run
+      input:
+        files:
+          INSTANCE_REPO: "repo"
+        params:
+          params:
+            env_names: ${ENV_NAMES}
+            git:
+              host: ${INSTANCE_REPO_HOST}
+              repository: ${INSTANCE_REPO_PATH}
+              ref_name: ${INSTANCE_REPO_BRANCH}
+              user_name: ${GIT_USER_NAME}
+              user_email: ${GIT_USER_EMAIL}
+            envgene_vars:
+              ENV_BUILDER: ${ENV_BUILDER}
+              GENERATE_EFFECTIVE_SET: ${GENERATE_EFFECTIVE_SET}
+              PIPELINE_TYPE: ${PIPELINE_TYPE}
+              OPERATION_TYPE: ${OPERATION_TYPE}
+              APPLICATION_VERSIONS: ${APPLICATION_VERSIONS}
+        params_secure:
+          git_token: ${GIT_TOKEN}
+          envgene_age_private_key: ${SOPS_AGE_KEY}
+          public_age_keys: ${SOPS_AGE_RECIPIENTS}
+      output:
+        params:
+          EFFECTIVE_SET_DIR: "params.effective_set_dir"
+
+  configuration:
+    output:
+      params:
+        params:
+          EFFECTIVE_SET_DIR: ${EFFECTIVE_SET_DIR}
