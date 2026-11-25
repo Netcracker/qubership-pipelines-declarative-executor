@@ -1,0 +1,50 @@
+name: Rebuild Release Image
+run-name: ${{ github.repository }} Rebuild image ${{ inputs.tag }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to rebuild and overwrite (e.g. v2.2.3)"
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: rebuild-image-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  rebuild-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Checkout release tag
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      with:
+        ref: ${{ inputs.tag }}
+        persist-credentials: false
+
+    - name: Set up Python
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: '3.11'
+
+    - name: Export requirements.txt
+      run: pip install poetry && poetry self add poetry-plugin-export && poetry export -f requirements.txt --output requirements.txt --without-hashes
+
+    - name: Build and Publish Docker image
+      uses: netcracker/qubership-workflow-hub/actions/docker-action@8c6dbeb901920bae9f40d7d7b646d8d9127e1ce7 # v2.4.0
+      with:
+        checkout: false
+        custom-image-name: qubership-pipelines-declarative-executor
+        platforms: linux/amd64
+        tags: latest,${{ inputs.tag }}
+        dry-run: false
+        download-artifact: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
